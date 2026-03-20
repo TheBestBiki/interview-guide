@@ -1,4 +1,6 @@
-export default {
+import { defineConfig } from 'vitepress'
+
+export default defineConfig({
   title: '面试指南',
   description: '高级Java开发工程师面试题汇总',
   base: '/interview-guide/',
@@ -13,11 +15,11 @@ export default {
       { text: '中间件', link: '/interview-guide/06-middleware/' },
       { text: '项目经验', link: '/interview-guide/07-project/' },
     ],
+
     sidebar: {
-      '/01-java/': [
+      '/interview-guide/01-java/': [
         {
           text: 'Java核心与并发',
-          collapsed: false,
           items: [
             { text: 'Q1: synchronized和ReentrantLock', link: '/interview-guide/01-java/q1-synchronized' },
             { text: 'Q2: ThreadPoolExecutor', link: '/interview-guide/01-java/q2-threadpool' },
@@ -27,10 +29,9 @@ export default {
           ]
         }
       ],
-      '/02-microservice/': [
+      '/interview-guide/02-microservice/': [
         {
           text: 'SpringCloud与微服务',
-          collapsed: false,
           items: [
             { text: 'Q6: Spring Cloud核心组件', link: '/interview-guide/02-microservice/q6-springcloud' },
             { text: 'Q7: 分布式事务Seata', link: '/interview-guide/02-microservice/q7-seata' },
@@ -39,10 +40,9 @@ export default {
           ]
         }
       ],
-      '/03-database/': [
+      '/interview-guide/03-database/': [
         {
           text: '数据库与缓存',
-          collapsed: false,
           items: [
             { text: 'Q10: Redis数据结构与分布式锁', link: '/interview-guide/03-database/q10-redis' },
             { text: 'Q11: MySQL索引优化与分库分表', link: '/interview-guide/03-database/q11-mysql-optimization' },
@@ -51,10 +51,9 @@ export default {
           ]
         }
       ],
-      '/04-design/': [
+      '/interview-guide/04-design/': [
         {
           text: '设计模式与系统设计',
-          collapsed: false,
           items: [
             { text: 'Q14: 设计模式', link: '/interview-guide/04-design/q14-design-patterns' },
             { text: 'Q15: 秒杀系统设计', link: '/interview-guide/04-design/q15-seckill-system' },
@@ -62,10 +61,9 @@ export default {
           ]
         }
       ],
-      '/05-security/': [
+      '/interview-guide/05-security/': [
         {
           text: '认证授权与安全',
-          collapsed: false,
           items: [
             { text: 'Q17: JWT Token', link: '/interview-guide/05-security/q17-jwt' },
             { text: 'Q18: SSO单点登录', link: '/interview-guide/05-security/q18-sso' },
@@ -74,10 +72,9 @@ export default {
           ]
         }
       ],
-      '/06-middleware/': [
+      '/interview-guide/06-middleware/': [
         {
           text: '分布式系统与中间件',
-          collapsed: false,
           items: [
             { text: 'Q21: Redis缓存问题', link: '/interview-guide/06-middleware/q21-redis-cache' },
             { text: 'Q22: ES同步与优化', link: '/interview-guide/06-middleware/q22-es-sync' },
@@ -92,10 +89,9 @@ export default {
           ]
         }
       ],
-      '/07-project/': [
+      '/interview-guide/07-project/': [
         {
           text: '项目与职业发展',
-          collapsed: false,
           items: [
             { text: 'Q31: 有挑战的项目', link: '/interview-guide/07-project/q31-challenging-project' },
             { text: 'Q32: 职业规划', link: '/interview-guide/07-project/q32-career-plan' },
@@ -104,8 +100,9 @@ export default {
         }
       ]
     },
+
     socialLinks: [
       { icon: 'github', link: 'https://github.com/TheBestBiki/interview-guide' }
     ]
   }
-}
+})
