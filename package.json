@@ -1,0 +1,13 @@
+{
+  "name": "interview-guide",
+  "version": "1.0.0",
+  "description": "高级Java开发工程师面试指南",
+  "scripts": {
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
+  },
+  "devDependencies": {
+    "vitepress": "^1.0.0-rc44"
+  }
+}
