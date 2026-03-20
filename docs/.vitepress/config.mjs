@@ -7,7 +7,7 @@ export default defineConfig({
 
   themeConfig: {
     nav: [
-      { text: '首页', link: '/' },
+      { text: '首页', link: '/interview-guide/' },
       { text: 'Java核心', link: '/interview-guide/01-java/' },
     ],
 
