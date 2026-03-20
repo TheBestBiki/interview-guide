@@ -13,5 +13,5 @@
 
 ## 项目使用
 
-在嘉立创项目中，我们使用：
+在我们公司项目中，我们使用：
 - **Spring Cloud + Nacos + Feign + Sentinel + Gateway**
