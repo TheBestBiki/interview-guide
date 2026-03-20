@@ -3,6 +3,7 @@ import { defineConfig } from 'vitepress'
 export default defineConfig({
   title: '面试指南',
   description: '高级Java开发工程师面试题汇总',
+  base: '/interview-guide/',
 
   head: [
     ['link', { rel: 'icon', href: 'https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png' }]
