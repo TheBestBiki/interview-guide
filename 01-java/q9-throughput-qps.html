@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en-US" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Q9: 吞吐量与QPS深度剖析 | 面试指南</title>
+    <meta name="description" content="高级Java开发工程师面试题汇总">
+    <meta name="generator" content="VitePress v1.6.4">
+    <link rel="preload stylesheet" href="/interview-guide/assets/style.DujbOt1Q.css" as="style">
+    <link rel="preload stylesheet" href="/interview-guide/vp-icons.css" as="style">
+    
+    <script type="module" src="/interview-guide/assets/app.DMTp9co0.js"></script>
+    <link rel="preload" href="/interview-guide/assets/inter-roman-latin.Di8DUHzh.woff2" as="font" type="font/woff2" crossorigin="">
+    <link rel="modulepreload" href="/interview-guide/assets/chunks/theme.BK7U7Xo8.js">
+    <link rel="modulepreload" href="/interview-guide/assets/chunks/framework.CC-i3qbO.js">
+    <link rel="modulepreload" href="/interview-guide/assets/01-java_q9-throughput-qps.md.YiJJovfT.lean.js">
+    <script id="check-dark-mode">(()=>{const e=localStorage.getItem("vitepress-theme-appearance")||"auto",a=window.matchMedia("(prefers-color-scheme: dark)").matches;(!e||e==="auto"?a:e==="dark")&&document.documentElement.classList.add("dark")})();</script>
+    <script id="check-mac-os">document.documentElement.classList.toggle("mac",/Mac|iPhone|iPod|iPad/i.test(navigator.platform));</script>
+  </head>
+  <body>
+    <div id="app"><div class="Layout" data-v-5d98c3a5><!--[--><!--]--><!--[--><span tabindex="-1" data-v-0b0ada53></span><a href="#VPContent" class="VPSkipLink visually-hidden" data-v-0b0ada53>Skip to content</a><!--]--><!----><header class="VPNav" data-v-5d98c3a5 data-v-ae24b3ad><div class="VPNavBar" data-v-ae24b3ad data-v-6aa21345><div class="wrapper" data-v-6aa21345><div class="container" data-v-6aa21345><div class="title" data-v-6aa21345><div class="VPNavBarTitle has-sidebar" data-v-6aa21345 data-v-1168a8e4><a class="title" href="/interview-guide/" data-v-1168a8e4><!--[--><!--]--><!----><span data-v-1168a8e4>面试指南</span><!--[--><!--]--></a></div></div><div class="content" data-v-6aa21345><div class="content-body" data-v-6aa21345><!--[--><!--]--><div class="VPNavBarSearch search" data-v-6aa21345><!----></div><nav aria-labelledby="main-nav-aria-label" class="VPNavBarMenu menu" data-v-6aa21345 data-v-dc692963><span id="main-nav-aria-label" class="visually-hidden" data-v-dc692963> Main Navigation </span><!--[--><!--[--><a class="VPLink link VPNavBarMenuLink" href="/interview-guide/" tabindex="0" data-v-dc692963 data-v-e56f3d57><!--[--><span data-v-e56f3d57>首页</span><!--]--></a><!--]--><!--]--></nav><!----><div class="VPNavBarAppearance appearance" data-v-6aa21345 data-v-6c893767><button class="VPSwitch VPSwitchAppearance" type="button" role="switch" title aria-checked="false" data-v-6c893767 data-v-5337faa4 data-v-1d5665e3><span class="check" data-v-1d5665e3><span class="icon" data-v-1d5665e3><!--[--><span class="vpi-sun sun" data-v-5337faa4></span><span class="vpi-moon moon" data-v-5337faa4></span><!--]--></span></span></button></div><!----><div class="VPFlyout VPNavBarExtra extra" data-v-6aa21345 data-v-bb2aa2f0 data-v-cf11d7a2><button type="button" class="button" aria-haspopup="true" aria-expanded="false" aria-label="extra navigation" data-v-cf11d7a2><span class="vpi-more-horizontal icon" data-v-cf11d7a2></span></button><div class="menu" data-v-cf11d7a2><div class="VPMenu" data-v-cf11d7a2 data-v-b98bc113><!----><!--[--><!--[--><!----><div class="group" data-v-bb2aa2f0><div class="item appearance" data-v-bb2aa2f0><p class="label" data-v-bb2aa2f0>Appearance</p><div class="appearance-action" data-v-bb2aa2f0><button class="VPSwitch VPSwitchAppearance" type="button" role="switch" title aria-checked="false" data-v-bb2aa2f0 data-v-5337faa4 data-v-1d5665e3><span class="check" data-v-1d5665e3><span class="icon" data-v-1d5665e3><!--[--><span class="vpi-sun sun" data-v-5337faa4></span><span class="vpi-moon moon" data-v-5337faa4></span><!--]--></span></span></button></div></div></div><!----><!--]--><!--]--></div></div></div><!--[--><!--]--><button type="button" class="VPNavBarHamburger hamburger" aria-label="mobile navigation" aria-expanded="false" aria-controls="VPNavScreen" data-v-6aa21345 data-v-e5dd9c1c><span class="container" data-v-e5dd9c1c><span class="top" data-v-e5dd9c1c></span><span class="middle" data-v-e5dd9c1c></span><span class="bottom" data-v-e5dd9c1c></span></span></button></div></div></div></div><div class="divider" data-v-6aa21345><div class="divider-line" data-v-6aa21345></div></div></div><!----></header><div class="VPLocalNav has-sidebar empty" data-v-5d98c3a5 data-v-a6f0e41e><div class="container" data-v-a6f0e41e><button class="menu" aria-expanded="false" aria-controls="VPSidebarNav" data-v-a6f0e41e><span class="vpi-align-left menu-icon" data-v-a6f0e41e></span><span class="menu-text" data-v-a6f0e41e>Menu</span></button><div class="VPLocalNavOutlineDropdown" style="--vp-vh:0px;" data-v-a6f0e41e data-v-8a42e2b4><button data-v-8a42e2b4>Return to top</button><!----></div></div></div><aside class="VPSidebar" data-v-5d98c3a5 data-v-319d5ca6><div class="curtain" data-v-319d5ca6></div><nav class="nav" id="VPSidebarNav" aria-labelledby="sidebar-aria-label" tabindex="-1" data-v-319d5ca6><span class="visually-hidden" id="sidebar-aria-label" data-v-319d5ca6> Sidebar Navigation </span><!--[--><!--]--><!--[--><div class="no-transition group" data-v-c40bc020><section class="VPSidebarItem level-0 has-active" data-v-c40bc020 data-v-b3fd67f8><div class="item" role="button" tabindex="0" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><h2 class="text" data-v-b3fd67f8>Java核心</h2><!----></div><div class="items" data-v-b3fd67f8><!--[--><div class="VPSidebarItem level-1 is-link" data-v-b3fd67f8 data-v-b3fd67f8><div class="item" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><a class="VPLink link link" href="/interview-guide/01-java/q1-synchronized.html" data-v-b3fd67f8><!--[--><p class="text" data-v-b3fd67f8>Q1: synchronized和ReentrantLock</p><!--]--></a><!----></div><!----></div><div class="VPSidebarItem level-1 is-link" data-v-b3fd67f8 data-v-b3fd67f8><div class="item" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><a class="VPLink link link" href="/interview-guide/01-java/q2-threadpool.html" data-v-b3fd67f8><!--[--><p class="text" data-v-b3fd67f8>Q2: ThreadPoolExecutor</p><!--]--></a><!----></div><!----></div><div class="VPSidebarItem level-1 is-link" data-v-b3fd67f8 data-v-b3fd67f8><div class="item" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><a class="VPLink link link" href="/interview-guide/01-java/q3-volatile.html" data-v-b3fd67f8><!--[--><p class="text" data-v-b3fd67f8>Q3: volatile与happens-before</p><!--]--></a><!----></div><!----></div><div class="VPSidebarItem level-1 is-link" data-v-b3fd67f8 data-v-b3fd67f8><div class="item" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><a class="VPLink link link" href="/interview-guide/01-java/q4-jvm.html" data-v-b3fd67f8><!--[--><p class="text" data-v-b3fd67f8>Q4: JVM内存模型和垃圾回收</p><!--]--></a><!----></div><!----></div><div class="VPSidebarItem level-1 is-link" data-v-b3fd67f8 data-v-b3fd67f8><div class="item" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><a class="VPLink link link" href="/interview-guide/01-java/q5-jvm-tuning.html" data-v-b3fd67f8><!--[--><p class="text" data-v-b3fd67f8>Q5: JVM调优与排查</p><!--]--></a><!----></div><!----></div><div class="VPSidebarItem level-1 is-link" data-v-b3fd67f8 data-v-b3fd67f8><div class="item" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><a class="VPLink link link" href="/interview-guide/01-java/q6-concurrent-hashmap.html" data-v-b3fd67f8><!--[--><p class="text" data-v-b3fd67f8>Q6: ConcurrentHashMap深度剖析</p><!--]--></a><!----></div><!----></div><div class="VPSidebarItem level-1 is-link" data-v-b3fd67f8 data-v-b3fd67f8><div class="item" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><a class="VPLink link link" href="/interview-guide/01-java/q7-generational-gc.html" data-v-b3fd67f8><!--[--><p class="text" data-v-b3fd67f8>Q7: Java分代回收深度剖析</p><!--]--></a><!----></div><!----></div><div class="VPSidebarItem level-1 is-link" data-v-b3fd67f8 data-v-b3fd67f8><div class="item" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><a class="VPLink link link" href="/interview-guide/01-java/q8-jvm-memory-model.html" data-v-b3fd67f8><!--[--><p class="text" data-v-b3fd67f8>Q8: JVM内存模型深度剖析</p><!--]--></a><!----></div><!----></div><div class="VPSidebarItem level-1 is-link" data-v-b3fd67f8 data-v-b3fd67f8><div class="item" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><a class="VPLink link link" href="/interview-guide/01-java/q9-throughput-qps.html" data-v-b3fd67f8><!--[--><p class="text" data-v-b3fd67f8>Q9: 吞吐量与QPS深度剖析</p><!--]--></a><!----></div><!----></div><!--]--></div></section></div><div class="no-transition group" data-v-c40bc020><section class="VPSidebarItem level-0" data-v-c40bc020 data-v-b3fd67f8><div class="item" role="button" tabindex="0" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><h2 class="text" data-v-b3fd67f8>SpringCloud与微服务</h2><!----></div><div class="items" data-v-b3fd67f8><!--[--><div class="VPSidebarItem level-1 is-link" data-v-b3fd67f8 data-v-b3fd67f8><div class="item" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><a class="VPLink link link" href="/interview-guide/02-microservice/q6-springcloud.html" data-v-b3fd67f8><!--[--><p class="text" data-v-b3fd67f8>Q12: Spring Cloud核心组件</p><!--]--></a><!----></div><!----></div><div class="VPSidebarItem level-1 is-link" data-v-b3fd67f8 data-v-b3fd67f8><div class="item" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><a class="VPLink link link" href="/interview-guide/02-microservice/q7-seata.html" data-v-b3fd67f8><!--[--><p class="text" data-v-b3fd67f8>Q13: 分布式事务Seata</p><!--]--></a><!----></div><!----></div><div class="VPSidebarItem level-1 is-link" data-v-b3fd67f8 data-v-b3fd67f8><div class="item" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><a class="VPLink link link" href="/interview-guide/02-microservice/q8-high-availability.html" data-v-b3fd67f8><!--[--><p class="text" data-v-b3fd67f8>Q14: 微服务高可用</p><!--]--></a><!----></div><!----></div><div class="VPSidebarItem level-1 is-link" data-v-b3fd67f8 data-v-b3fd67f8><div class="item" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><a class="VPLink link link" href="/interview-guide/02-microservice/q9-context-passing.html" data-v-b3fd67f8><!--[--><p class="text" data-v-b3fd67f8>Q15: 服务间上下文传递</p><!--]--></a><!----></div><!----></div><!--]--></div></section></div><div class="no-transition group" data-v-c40bc020><section class="VPSidebarItem level-0" data-v-c40bc020 data-v-b3fd67f8><div class="item" role="button" tabindex="0" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><h2 class="text" data-v-b3fd67f8>数据库与缓存</h2><!----></div><div class="items" data-v-b3fd67f8><!--[--><div class="VPSidebarItem level-1 is-link" data-v-b3fd67f8 data-v-b3fd67f8><div class="item" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><a class="VPLink link link" href="/interview-guide/03-database/q10-redis.html" data-v-b3fd67f8><!--[--><p class="text" data-v-b3fd67f8>Q16: Redis数据结构与分布式锁</p><!--]--></a><!----></div><!----></div><div class="VPSidebarItem level-1 is-link" data-v-b3fd67f8 data-v-b3fd67f8><div class="item" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><a class="VPLink link link" href="/interview-guide/03-database/q11-mysql-optimization.html" data-v-b3fd67f8><!--[--><p class="text" data-v-b3fd67f8>Q17: MySQL索引优化与分库分表</p><!--]--></a><!----></div><!----></div><div class="VPSidebarItem level-1 is-link" data-v-b3fd67f8 data-v-b3fd67f8><div class="item" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><a class="VPLink link link" href="/interview-guide/03-database/q12-mq.html" data-v-b3fd67f8><!--[--><p class="text" data-v-b3fd67f8>Q18: 消息队列</p><!--]--></a><!----></div><!----></div><div class="VPSidebarItem level-1 is-link" data-v-b3fd67f8 data-v-b3fd67f8><div class="item" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><a class="VPLink link link" href="/interview-guide/03-database/q13-cross-shard-query.html" data-v-b3fd67f8><!--[--><p class="text" data-v-b3fd67f8>Q19: 跨片查询</p><!--]--></a><!----></div><!----></div><!--]--></div></section></div><div class="no-transition group" data-v-c40bc020><section class="VPSidebarItem level-0" data-v-c40bc020 data-v-b3fd67f8><div class="item" role="button" tabindex="0" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><h2 class="text" data-v-b3fd67f8>设计模式与系统设计</h2><!----></div><div class="items" data-v-b3fd67f8><!--[--><div class="VPSidebarItem level-1 is-link" data-v-b3fd67f8 data-v-b3fd67f8><div class="item" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><a class="VPLink link link" href="/interview-guide/04-design/q14-design-patterns.html" data-v-b3fd67f8><!--[--><p class="text" data-v-b3fd67f8>Q20: 设计模式</p><!--]--></a><!----></div><!----></div><div class="VPSidebarItem level-1 is-link" data-v-b3fd67f8 data-v-b3fd67f8><div class="item" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><a class="VPLink link link" href="/interview-guide/04-design/q15-seckill-system.html" data-v-b3fd67f8><!--[--><p class="text" data-v-b3fd67f8>Q21: 秒杀系统设计</p><!--]--></a><!----></div><!----></div><div class="VPSidebarItem level-1 is-link" data-v-b3fd67f8 data-v-b3fd67f8><div class="item" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><a class="VPLink link link" href="/interview-guide/04-design/q16-microservice-architecture.html" data-v-b3fd67f8><!--[--><p class="text" data-v-b3fd67f8>Q22: 微服务架构设计</p><!--]--></a><!----></div><!----></div><!--]--></div></section></div><div class="no-transition group" data-v-c40bc020><section class="VPSidebarItem level-0" data-v-c40bc020 data-v-b3fd67f8><div class="item" role="button" tabindex="0" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><h2 class="text" data-v-b3fd67f8>认证授权与安全</h2><!----></div><div class="items" data-v-b3fd67f8><!--[--><div class="VPSidebarItem level-1 is-link" data-v-b3fd67f8 data-v-b3fd67f8><div class="item" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><a class="VPLink link link" href="/interview-guide/05-security/q17-jwt.html" data-v-b3fd67f8><!--[--><p class="text" data-v-b3fd67f8>Q23: JWT Token</p><!--]--></a><!----></div><!----></div><div class="VPSidebarItem level-1 is-link" data-v-b3fd67f8 data-v-b3fd67f8><div class="item" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><a class="VPLink link link" href="/interview-guide/05-security/q18-sso.html" data-v-b3fd67f8><!--[--><p class="text" data-v-b3fd67f8>Q24: SSO单点登录</p><!--]--></a><!----></div><!----></div><div class="VPSidebarItem level-1 is-link" data-v-b3fd67f8 data-v-b3fd67f8><div class="item" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><a class="VPLink link link" href="/interview-guide/05-security/q19-security.html" data-v-b3fd67f8><!--[--><p class="text" data-v-b3fd67f8>Q25: 安全防护</p><!--]--></a><!----></div><!----></div><div class="VPSidebarItem level-1 is-link" data-v-b3fd67f8 data-v-b3fd67f8><div class="item" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><a class="VPLink link link" href="/interview-guide/05-security/q20-idempotent.html" data-v-b3fd67f8><!--[--><p class="text" data-v-b3fd67f8>Q26: 接口幂等</p><!--]--></a><!----></div><!----></div><!--]--></div></section></div><div class="no-transition group" data-v-c40bc020><section class="VPSidebarItem level-0" data-v-c40bc020 data-v-b3fd67f8><div class="item" role="button" tabindex="0" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><h2 class="text" data-v-b3fd67f8>分布式系统与中间件</h2><!----></div><div class="items" data-v-b3fd67f8><!--[--><div class="VPSidebarItem level-1 is-link" data-v-b3fd67f8 data-v-b3fd67f8><div class="item" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><a class="VPLink link link" href="/interview-guide/06-middleware/q21-redis-cache.html" data-v-b3fd67f8><!--[--><p class="text" data-v-b3fd67f8>Q27: Redis缓存问题</p><!--]--></a><!----></div><!----></div><div class="VPSidebarItem level-1 is-link" data-v-b3fd67f8 data-v-b3fd67f8><div class="item" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><a class="VPLink link link" href="/interview-guide/06-middleware/q22-es-sync.html" data-v-b3fd67f8><!--[--><p class="text" data-v-b3fd67f8>Q28: ES同步与优化</p><!--]--></a><!----></div><!----></div><div class="VPSidebarItem level-1 is-link" data-v-b3fd67f8 data-v-b3fd67f8><div class="item" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><a class="VPLink link link" href="/interview-guide/06-middleware/q23-api-design.html" data-v-b3fd67f8><!--[--><p class="text" data-v-b3fd67f8>Q29: API设计</p><!--]--></a><!----></div><!----></div><div class="VPSidebarItem level-1 is-link" data-v-b3fd67f8 data-v-b3fd67f8><div class="item" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><a class="VPLink link link" href="/interview-guide/06-middleware/q24-arthas.html" data-v-b3fd67f8><!--[--><p class="text" data-v-b3fd67f8>Q30: Arthas使用</p><!--]--></a><!----></div><!----></div><div class="VPSidebarItem level-1 is-link" data-v-b3fd67f8 data-v-b3fd67f8><div class="item" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><a class="VPLink link link" href="/interview-guide/06-middleware/q25-mysql-replication.html" data-v-b3fd67f8><!--[--><p class="text" data-v-b3fd67f8>Q31: MySQL主从复制</p><!--]--></a><!----></div><!----></div><div class="VPSidebarItem level-1 is-link" data-v-b3fd67f8 data-v-b3fd67f8><div class="item" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><a class="VPLink link link" href="/interview-guide/06-middleware/q26-multi-level-cache.html" data-v-b3fd67f8><!--[--><p class="text" data-v-b3fd67f8>Q32: 多级缓存架构</p><!--]--></a><!----></div><!----></div><div class="VPSidebarItem level-1 is-link" data-v-b3fd67f8 data-v-b3fd67f8><div class="item" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><a class="VPLink link link" href="/interview-guide/06-middleware/q27-distributed-id.html" data-v-b3fd67f8><!--[--><p class="text" data-v-b3fd67f8>Q33: 分布式ID</p><!--]--></a><!----></div><!----></div><div class="VPSidebarItem level-1 is-link" data-v-b3fd67f8 data-v-b3fd67f8><div class="item" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><a class="VPLink link link" href="/interview-guide/06-middleware/q28-payment-system.html" data-v-b3fd67f8><!--[--><p class="text" data-v-b3fd67f8>Q34: 支付系统设计</p><!--]--></a><!----></div><!----></div><div class="VPSidebarItem level-1 is-link" data-v-b3fd67f8 data-v-b3fd67f8><div class="item" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><a class="VPLink link link" href="/interview-guide/06-middleware/q29-performance-optimization.html" data-v-b3fd67f8><!--[--><p class="text" data-v-b3fd67f8>Q35: 性能优化</p><!--]--></a><!----></div><!----></div><div class="VPSidebarItem level-1 is-link" data-v-b3fd67f8 data-v-b3fd67f8><div class="item" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><a class="VPLink link link" href="/interview-guide/06-middleware/q30-seckill-ha.html" data-v-b3fd67f8><!--[--><p class="text" data-v-b3fd67f8>Q36: 秒杀高可用方案</p><!--]--></a><!----></div><!----></div><!--]--></div></section></div><div class="no-transition group" data-v-c40bc020><section class="VPSidebarItem level-0" data-v-c40bc020 data-v-b3fd67f8><div class="item" role="button" tabindex="0" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><h2 class="text" data-v-b3fd67f8>项目与职业发展</h2><!----></div><div class="items" data-v-b3fd67f8><!--[--><div class="VPSidebarItem level-1 is-link" data-v-b3fd67f8 data-v-b3fd67f8><div class="item" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><a class="VPLink link link" href="/interview-guide/07-project/q31-challenging-project.html" data-v-b3fd67f8><!--[--><p class="text" data-v-b3fd67f8>Q37: 有挑战的项目</p><!--]--></a><!----></div><!----></div><div class="VPSidebarItem level-1 is-link" data-v-b3fd67f8 data-v-b3fd67f8><div class="item" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><a class="VPLink link link" href="/interview-guide/07-project/q32-career-plan.html" data-v-b3fd67f8><!--[--><p class="text" data-v-b3fd67f8>Q38: 职业规划</p><!--]--></a><!----></div><!----></div><div class="VPSidebarItem level-1 is-link" data-v-b3fd67f8 data-v-b3fd67f8><div class="item" data-v-b3fd67f8><div class="indicator" data-v-b3fd67f8></div><a class="VPLink link link" href="/interview-guide/07-project/q33-questions.html" data-v-b3fd67f8><!--[--><p class="text" data-v-b3fd67f8>Q39: 反问面试官</p><!--]--></a><!----></div><!----></div><!--]--></div></section></div><!--]--><!--[--><!--]--></nav></aside><div class="VPContent has-sidebar" id="VPContent" data-v-5d98c3a5 data-v-1428d186><div class="VPDoc has-sidebar has-aside" data-v-1428d186 data-v-39a288b8><!--[--><!--]--><div class="container" data-v-39a288b8><div class="aside" data-v-39a288b8><div class="aside-curtain" data-v-39a288b8></div><div class="aside-container" data-v-39a288b8><div class="aside-content" data-v-39a288b8><div class="VPDocAside" data-v-39a288b8 data-v-3f215769><!--[--><!--]--><!--[--><!--]--><nav aria-labelledby="doc-outline-aria-label" class="VPDocAsideOutline" data-v-3f215769 data-v-a5bbad30><div class="content" data-v-a5bbad30><div class="outline-marker" data-v-a5bbad30></div><div aria-level="2" class="outline-title" id="doc-outline-aria-label" role="heading" data-v-a5bbad30>On this page</div><ul class="VPDocOutlineItem root" data-v-a5bbad30 data-v-b933a997><!--[--><!--]--></ul></div></nav><!--[--><!--]--><div class="spacer" data-v-3f215769></div><!--[--><!--]--><!----><!--[--><!--]--><!--[--><!--]--></div></div></div></div><div class="content" data-v-39a288b8><div class="content-container" data-v-39a288b8><!--[--><!--]--><main class="main" data-v-39a288b8><div style="position:relative;" class="vp-doc _interview-guide_01-java_q9-throughput-qps" data-v-39a288b8><div><h1 id="q9-吞吐量与qps深度剖析" tabindex="-1">Q9: 吞吐量与QPS深度剖析 <a class="header-anchor" href="#q9-吞吐量与qps深度剖析" aria-label="Permalink to &quot;Q9: 吞吐量与QPS深度剖析&quot;">​</a></h1><blockquote><p>很多面试者对吞吐量、QPS、TPS、CPS这些概念混为一谈，导致面试被问住。本文帮你彻底理清这些概念，并给出实用的参考数值。</p></blockquote><h2 id="核心概念辨析" tabindex="-1">核心概念辨析 <a class="header-anchor" href="#核心概念辨析" aria-label="Permalink to &quot;核心概念辨析&quot;">​</a></h2><h3 id="什么是qps" tabindex="-1">什么是QPS？ <a class="header-anchor" href="#什么是qps" aria-label="Permalink to &quot;什么是QPS？&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>QPS (Queries Per Second) = 每秒查询数</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>简单理解：服务器每秒能处理多少个请求</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>┌─────────────────────────────────────────────────────┐</span></span>
+<span class="line"><span>│                    QPS                              │</span></span>
+<span class="line"><span>│  ← 1秒 →                                           │</span></span>
+<span class="line"><span>│  ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐        │</span></span>
+<span class="line"><span>│  │ req │ │ req │ │ req │ │ req │ │ req │  ...   │</span></span>
+<span class="line"><span>│  └─────┘ └─────┘ └─────┘ └─────┘ └─────┘        │</span></span>
+<span class="line"><span>│                                                      │</span></span>
+<span class="line"><span>│  如果1秒处理了1000个请求 → QPS = 1000              │</span></span>
+<span class="line"><span>└─────────────────────────────────────────────────────┘</span></span></code></pre></div><h3 id="什么是吞吐量" tabindex="-1">什么是吞吐量？ <a class="header-anchor" href="#什么是吞吐量" aria-label="Permalink to &quot;什么是吞吐量？&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>吞吐量 (Throughput) = 单位时间内处理的数据量</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>和QPS的关系：</span></span>
+<span class="line"><span>- QPS = 每秒请求数（关注请求数量）</span></span>
+<span class="line"><span>- 吞吐量 = 每秒处理数据量（关注数据量）</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>举例：</span></span>
+<span class="line"><span>- QPS=1000，每个请求1KB → 吞吐量 = 1MB/s</span></span>
+<span class="line"><span>- QPS=100，每个请求10MB → 吞吐量 = 1MB/s</span></span></code></pre></div><h3 id="常见混淆概念" tabindex="-1">常见混淆概念 <a class="header-anchor" href="#常见混淆概念" aria-label="Permalink to &quot;常见混淆概念&quot;">​</a></h3><table tabindex="0"><thead><tr><th>概念</th><th>全称</th><th>含义</th><th>面试重点</th></tr></thead><tbody><tr><td><strong>QPS</strong></td><td>Queries Per Second</td><td>每秒查询数</td><td>单机处理能力</td></tr><tr><td><strong>TPS</strong></td><td>Transactions Per Second</td><td>每秒事务数</td><td>业务完整性</td></tr><tr><td><strong>RPS</strong></td><td>Requests Per Second</td><td>每秒请求数</td><td>同QPS</td></tr><tr><td><strong>CPS</strong></td><td>Connections Per Second</td><td>每秒新建连接数</td><td>网络层面</td></tr><tr><td><strong>RT</strong></td><td>Response Time</td><td>响应时间</td><td>用户体验</td></tr><tr><td><strong>PV</strong></td><td>Page View</td><td>页面访问量</td><td>统计口径</td></tr><tr><td><strong>UV</strong></td><td>Unique Visitor</td><td>独立访客</td><td>统计口径</td></tr></tbody></table><h3 id="qps-vs-tps-关键区别" tabindex="-1">QPS vs TPS 关键区别 <a class="header-anchor" href="#qps-vs-tps-关键区别" aria-label="Permalink to &quot;QPS vs TPS 关键区别&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>TPS = 一次业务操作包含多个请求</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>举例：用户下单</span></span>
+<span class="line"><span>┌─────────────────────────────────────────┐</span></span>
+<span class="line"><span>│  TPS = 1 (一个事务)                     │</span></span>
+<span class="line"><span>│  QPS = 3 (三个请求)                     │</span></span>
+<span class="line"><span>│  ┌───────────┐                         │</span></span>
+<span class="line"><span>│  │ 请求1: 查询 │ → QPS+1               │</span></span>
+<span class="line"><span>│  │ 请求2: 校验 │ → QPS+1               │</span></span>
+<span class="line"><span>│  │ 请求3: 下单 │ → QPS+1               │</span></span>
+<span class="line"><span>│  └───────────┘                         │</span></span>
+<span class="line"><span>└─────────────────────────────────────────┘</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>面试话术：</span></span>
+<span class="line"><span>&quot;TPS是业务维度的衡量，一个完整事务可能包含多个QPS。我们优化时主要关注QPS，但最终关心的是TPS代表的业务能力。&quot;</span></span></code></pre></div><h2 id="qps参考数值-你的服务器能抗多少" tabindex="-1">QPS参考数值：你的服务器能抗多少？ <a class="header-anchor" href="#qps参考数值-你的服务器能抗多少" aria-label="Permalink to &quot;QPS参考数值：你的服务器能抗多少？&quot;">​</a></h2><h3 id="不同配置的参考qps" tabindex="-1">不同配置的参考QPS <a class="header-anchor" href="#不同配置的参考qps" aria-label="Permalink to &quot;不同配置的参考QPS&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>┌────────────────────────────────────────────────────────────────────────┐</span></span>
+<span class="line"><span>│                        单机QPS参考值                                    │</span></span>
+<span class="line"><span>├────────────────────────────────────────────────────────────────────────┤</span></span>
+<span class="line"><span>│  配置             │  业务类型      │  预估QPS   │      说明          │</span></span>
+<span class="line"><span>├──────────────────┼───────────────┼────────────┼────────────────────┤</span></span>
+<span class="line"><span>│  2核2G           │  简单查询      │   500-1000 │  纯内存操作        │</span></span>
+<span class="line"><span>│  2核2G           │  常规业务      │   200-500  │  有DB/Redis调用    │</span></span>
+<span class="line"><span>│  2核2G           │  复杂计算      │   50-200   │  涉及算法/IO       │</span></span>
+<span class="line"><span>│  4核4G           │  简单查询      │   2000-5000│  纯内存操作        │</span></span>
+<span class="line"><span>│  4核4G           │  常规业务      │   800-2000 │  有DB/Redis调用    │</span></span>
+<span class="line"><span>│  4核4G           │  复杂计算      │   200-800  │  涉及算法/IO       │</span></span>
+<span class="line"><span>│  8核8G           │  简单查询      │   5000-10000│  纯内存操作       │</span></span>
+<span class="line"><span>│  8核8G           │  常规业务      │   2000-5000│  有DB/Redis调用    │</span></span>
+<span class="line"><span>│  8核8G           │  复杂计算      │   500-2000 │  涉及算法/IO       │</span></span>
+<span class="line"><span>│  16核16G         │  常规业务      │   5000-10000│  有DB/Redis调用   │</span></span>
+<span class="line"><span>│  32核32G         │  常规业务      │   10000-20000│  有DB/Redis调用  │</span></span>
+<span class="line"><span>└────────────────────────────────────────────────────────────────────────┘</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>注意：以上是单机预估，实际会受到以下因素影响</span></span></code></pre></div><h3 id="影响因素有哪些" tabindex="-1">影响因素有哪些？ <a class="header-anchor" href="#影响因素有哪些" aria-label="Permalink to &quot;影响因素有哪些？&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>QPS瓶颈分析：</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>1. CPU计算型</span></span>
+<span class="line"><span>   - 场景：JSON序列化/反序列化、加密解密</span></span>
+<span class="line"><span>   - 瓶颈：CPU核心数</span></span>
+<span class="line"><span>   - 优化：多线程、异步处理</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>2. IO密集型</span></span>
+<span class="line"><span>   - 场景：数据库查询、文件读写、网络请求</span></span>
+<span class="line"><span>   - 瓶颈：磁盘IO、网络延迟</span></span>
+<span class="line"><span>   - 优化：缓存、连接池、异步IO</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>3. 内存型</span></span>
+<span class="line"><span>   - 场景：大数据处理、复杂计算</span></span>
+<span class="line"><span>   - 瓶颈：内存大小、GC频率</span></span>
+<span class="line"><span>   - 优化：数据结构优化、减少对象创建</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>4. 网络型</span></span>
+<span class="line"><span>   - 场景：大文件上传下载、高并发推送</span></span>
+<span class="line"><span>   - 瓶颈：带宽、网卡</span></span>
+<span class="line"><span>   - 优化：压缩、CDN、分片</span></span></code></pre></div><h2 id="多台机器-qps如何扩展" tabindex="-1">多台机器：QPS如何扩展？ <a class="header-anchor" href="#多台机器-qps如何扩展" aria-label="Permalink to &quot;多台机器：QPS如何扩展？&quot;">​</a></h2><h3 id="理论计算" tabindex="-1">理论计算 <a class="header-anchor" href="#理论计算" aria-label="Permalink to &quot;理论计算&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>单机 QPS = 1000</span></span>
+<span class="line"><span>3台机器负载均衡 → 总QPS = 3000 (理想情况)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>但实际上有损耗：</span></span>
+<span class="line"><span>┌─────────────────────────────────────────────────────┐</span></span>
+<span class="line"><span>│  实际QPS = 单机QPS × 机器数 × 负载均衡效率          │</span></span>
+<span class="line"><span>│                                                     │</span></span>
+<span class="line"><span>│  负载均衡效率通常为 70-90%                          │</span></span>
+<span class="line"><span>│                                                     │</span></span>
+<span class="line"><span>│  例子：                                             │</span></span>
+<span class="line"><span>│  - 单机1000 QPS                                    │</span></span>
+<span class="line"><span>│  - 3台机器                                         │</span></span>
+<span class="line"><span>│  - 效率85%                                         │</span></span>
+<span class="line"><span>│  - 实际 = 1000 × 3 × 0.85 = 2550 QPS             │</span></span>
+<span class="line"><span>└─────────────────────────────────────────────────────┘</span></span></code></pre></div><h3 id="扩展方式-水平-vs-垂直" tabindex="-1">扩展方式：水平 vs 垂直 <a class="header-anchor" href="#扩展方式-水平-vs-垂直" aria-label="Permalink to &quot;扩展方式：水平 vs 垂直&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>垂直扩展 (Scale Up)：</span></span>
+<span class="line"><span>┌─────────────────────────────────────────────────────┐</span></span>
+<span class="line"><span>│  2核 → 4核 → 8核 → 16核                           │</span></span>
+<span class="line"><span>│                                                     │</span></span>
+<span class="line"><span>│  优点：简单、避免分布式复杂性                        │</span></span>
+<span class="line"><span>│  缺点：有上限、成本非线性增长                       │</span></span>
+<span class="line"><span>│  适用：小到中等规模                                 │</span></span>
+<span class="line"><span>└─────────────────────────────────────────────────────┘</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>水平扩展 (Scale Out)：</span></span>
+<span class="line"><span>┌─────────────────────────────────────────────────────┐</span></span>
+<span class="line"><span>│  1台 → 3台 → 10台 → 100台                         │</span></span>
+<span class="line"><span>│                                                     │</span></span>
+<span class="line"><span>│  优点：理论上无限扩展                               │</span></span>
+<span class="line"><span>│  缺点：分布式复杂性（一致性、事务、网络）            │</span></span>
+<span class="line"><span>│  适用：大规模应用                                   │</span></span>
+<span class="line"><span>└─────────────────────────────────────────────────────┘</span></span></code></pre></div><h3 id="实际案例-3台4核8g机器" tabindex="-1">实际案例：3台4核8G机器 <a class="header-anchor" href="#实际案例-3台4核8g机器" aria-label="Permalink to &quot;实际案例：3台4核8G机器&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>配置：3台 4核8G</span></span>
+<span class="line"><span>业务：常规CRUD接口（有Redis缓存+MySQL）</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>理论计算：</span></span>
+<span class="line"><span>- 单机预估：1500 QPS</span></span>
+<span class="line"><span>- 3台负载均衡：1500 × 3 = 4500 QPS</span></span>
+<span class="line"><span>- 考虑损耗(85%)：4500 × 0.85 ≈ 3800 QPS</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>实际建议：</span></span>
+<span class="line"><span>- 日常QPS：控制在 2000 以下（留余量）</span></span>
+<span class="line"><span>- 峰值QPS：可达 3500</span></span>
+<span class="line"><span>- 超过4000：考虑扩容或优化</span></span></code></pre></div><h2 id="实战场景-如何根据qps做调整" tabindex="-1">实战场景：如何根据QPS做调整？ <a class="header-anchor" href="#实战场景-如何根据qps做调整" aria-label="Permalink to &quot;实战场景：如何根据QPS做调整？&quot;">​</a></h2><h3 id="场景一-日常crud接口" tabindex="-1">场景一：日常CRUD接口 <a class="header-anchor" href="#场景一-日常crud接口" aria-label="Permalink to &quot;场景一：日常CRUD接口&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>┌─────────────────────────────────────────────────────┐</span></span>
+<span class="line"><span>│  场景：用户管理系统（增删改查）                     │</span></span>
+<span class="line"><span>│  单机配置：4核8G                                   │</span></span>
+<span class="line"><span>│  技术栈：Spring Boot + MySQL + Redis               │</span></span>
+<span class="line"><span>└─────────────────────────────────────────────────────┘</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>预估QPS：1500-2000</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>瓶颈分析：</span></span>
+<span class="line"><span>- 数据库连接池</span></span>
+<span class="line"><span>- Redis连接数</span></span>
+<span class="line"><span>- 业务线程池</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>调整建议：</span></span>
+<span class="line"><span>1. dbcp2连接池：10-20 → 30</span></span>
+<span class="line"><span>2. Redis连接池：8 → 50</span></span>
+<span class="line"><span>3. Tomcat线程：100 → 200</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>优化后预估：2500-3000 QPS</span></span></code></pre></div><h3 id="场景二-高并发查询" tabindex="-1">场景二：高并发查询 <a class="header-anchor" href="#场景二-高并发查询" aria-label="Permalink to &quot;场景二：高并发查询&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>┌─────────────────────────────────────────────────────┐</span></span>
+<span class="line"><span>│  场景：商品详情页（读多写少）                        │</span></span>
+<span class="line"><span>│  单机配置：4核8G                                   │</span></span>
+<span class="line"><span>│  技术栈：Spring Boot + Redis缓存 + MySQL           │</span></span>
+<span class="line"><span>└─────────────────────────────────────────────────────┘</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>预估QPS：5000-8000（缓存命中率高时）</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>瓶颈分析：</span></span>
+<span class="line"><span>- Redis QPS能力很强（可达10W+）</span></span>
+<span class="line"><span>- 网络带宽</span></span>
+<span class="line"><span>- 序列化/反序列化</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>调整建议：</span></span>
+<span class="line"><span>1. 使用Redis集群</span></span>
+<span class="line"><span>2. 减少Redis网络开销（Pipeline）</span></span>
+<span class="line"><span>3. 考虑本地缓存（Caffeine）</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>优化后预估：10000-15000 QPS</span></span></code></pre></div><h3 id="场景三-复杂计算型" tabindex="-1">场景三：复杂计算型 <a class="header-anchor" href="#场景三-复杂计算型" aria-label="Permalink to &quot;场景三：复杂计算型&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>┌─────────────────────────────────────────────────────┐</span></span>
+<span class="line"><span>│  场景：报表统计（复杂SQL+计算）                     │</span></span>
+<span class="line"><span>│  单机配置：8核16G                                   │</span></span>
+<span class="line"><span>│  技术栈：Spring Boot + MySQL + ES                  │</span></span>
+<span class="line"><span>└─────────────────────────────────────────────────────┘</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>预估QPS：100-500</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>瓶颈分析：</span></span>
+<span class="line"><span>- 数据库CPU</span></span>
+<span class="line"><span>- 复杂计算</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>调整建议：</span></span>
+<span class="line"><span>1. 异步处理：接单后返回，异步计算</span></span>
+<span class="line"><span>2. 预计算：定时任务预先算好</span></span>
+<span class="line"><span>3. 降级：高峰期关闭实时统计</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>优化思路：</span></span>
+<span class="line"><span>不是提高QPS，而是降低QPS压力（改为批量/异步）</span></span></code></pre></div><h2 id="面试高频追问" tabindex="-1">面试高频追问 <a class="header-anchor" href="#面试高频追问" aria-label="Permalink to &quot;面试高频追问&quot;">​</a></h2><h3 id="追问1-日活100万需要多少qps" tabindex="-1">追问1：日活100万需要多少QPS？ <a class="header-anchor" href="#追问1-日活100万需要多少qps" aria-label="Permalink to &quot;追问1：日活100万需要多少QPS？&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>计算过程：</span></span>
+<span class="line"><span>┌─────────────────────────────────────────────────────┐</span></span>
+<span class="line"><span>│  100万日活                                         │</span></span>
+<span class="line"><span>│  - 假设平均每人访问10次/天                          │</span></span>
+<span class="line"><span>│  - PV = 100万 × 10 = 1000万                        │</span></span>
+<span class="line"><span>│  - 假设80%访问集中在4小时                          │</span></span>
+<span class="line"><span>│  - 每小时PV = 1000万 ÷ 4 = 250万                   │</span></span>
+<span class="line"><span>│  - 每秒PV = 250万 ÷ 3600 ≈ 700                     │</span></span>
+<span class="line"><span>│                                                     │</span></span>
+<span class="line"><span>│  考虑峰值（3-5倍）：700 × 4 = 2800                │</span></span>
+<span class="line"><span>│  留30%余量：2800 ÷ 0.7 ≈ 4000 QPS                 │</span></span>
+<span class="line"><span>└─────────────────────────────────────────────────────┘</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>结论：</span></span>
+<span class="line"><span>- 日活100万 → 预估峰值4000 QPS</span></span>
+<span class="line"><span>- 3台4核8G机器即可满足</span></span>
+<span class="line"><span>- 如果更复杂，需要5-8台</span></span></code></pre></div><h3 id="追问2-如何评估现有系统的qps" tabindex="-1">追问2：如何评估现有系统的QPS？ <a class="header-anchor" href="#追问2-如何评估现有系统的qps" aria-label="Permalink to &quot;追问2：如何评估现有系统的QPS？&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>方法1：压测工具</span></span>
+<span class="line"><span>┌─────────────────────────────────────────────────────┐</span></span>
+<span class="line"><span>│  # 使用wrk                                          │</span></span>
+<span class="line"><span>│  wrk -t12 -c400 -d30s http://localhost:8080/api   │</span></span>
+<span class="line"><span>│                                                     │</span></span>
+<span class="line"><span>│  # 使用ab                                           │</span></span>
+<span class="line"><span>│  ab -n 10000 -c 100 http://localhost:8080/api     │</span></span>
+<span class="line"><span>│                                                     │</span></span>
+<span class="line"><span>│  # 使用JMeter                                       │</span></span>
+<span class="line"><span>│  可视化配置，支持复杂场景                            │</span></span>
+<span class="line"><span>└─────────────────────────────────────────────────────┘</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>方法2：监控观察</span></span>
+<span class="line"><span>┌─────────────────────────────────────────────────────┐</span></span>
+<span class="line"><span>│  # 查看Tomcat线程数                                 │</span></span>
+<span class="line"><span>│  server.tomcat.threads.busy                        │</span></span>
+<span class="line"><span>│                                                     │</span></span>
+<span class="line"><span>│  # 查看QPS                                          │</span></span>
+<span class="line"><span>│  server.tomcat.requests.count                      │</span></span>
+<span class="line"><span>│                                                     │</span></span>
+<span class="line"><span>│  # 使用Prometheus + Grafana                         │</span></span>
+<span class="line"><span>│  实时监控QPS变化                                    │</span></span>
+<span class="line"><span>└─────────────────────────────────────────────────────┘</span></span></code></pre></div><h3 id="追问3-qps和响应时间rt什么关系" tabindex="-1">追问3：QPS和响应时间RT什么关系？ <a class="header-anchor" href="#追问3-qps和响应时间rt什么关系" aria-label="Permalink to &quot;追问3：QPS和响应时间RT什么关系？&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>公式：</span></span>
+<span class="line"><span>QPS = 并发数 / RT(秒)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>举例：</span></span>
+<span class="line"><span>- 并发100个请求</span></span>
+<span class="line"><span>- 每个请求RT=100ms</span></span>
+<span class="line"><span>- QPS = 100 / 0.1 = 1000</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>优化RT就能提升QPS：</span></span>
+<span class="line"><span>┌─────────────────────────────────────────────────────┐</span></span>
+<span class="line"><span>│  响应时间分布                                       │</span></span>
+<span class="line"><span>│  ┌─────────────────────────────────────────────┐   │</span></span>
+<span class="line"><span>│  │  数据库查询    ████████████████████  50ms   │   │</span></span>
+<span class="line"><span>│  │  业务计算      ████                    10ms   │   │</span></span>
+<span class="line"><span>│  │  网络传输      █████████████           30ms   │   │</span></span>
+<span class="line"><span>│  │  序列化        ████                    10ms   │   │</span></span>
+<span class="line"><span>│  │  ─────────────────────────────────────       │   │</span></span>
+<span class="line"><span>│  │  总计          100ms                        │   │</span></span>
+<span class="line"><span>│  └─────────────────────────────────────────────┘   │</span></span>
+<span class="line"><span>│                                                     │</span></span>
+<span class="line"><span>│  优化方向：先优化耗时最长的（数据库）                │</span></span>
+<span class="line"><span>└─────────────────────────────────────────────────────┘</span></span></code></pre></div><h3 id="追问4-单机qps达到瓶颈怎么办" tabindex="-1">追问4：单机QPS达到瓶颈怎么办？ <a class="header-anchor" href="#追问4-单机qps达到瓶颈怎么办" aria-label="Permalink to &quot;追问4：单机QPS达到瓶颈怎么办？&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>处理流程：</span></span>
+<span class="line"><span>┌─────────────────────────────────────────────────────┐</span></span>
+<span class="line"><span>│                                                     │</span></span>
+<span class="line"><span>│  1. 确认瓶颈点                                     │</span></span>
+<span class="line"><span>│     ├─ CPU高 → 计算密集型                          │</span></span>
+<span class="line"><span>│     ├─ IO高 → IO密集型                             │</span></span>
+<span class="line"><span>│     └─ 等待高 → 外部依赖                           │</span></span>
+<span class="line"><span>│                                                     │</span></span>
+<span class="line"><span>│  2. 短期优化（不增加机器）                          │</span></span>
+<span class="line"><span>│     ├─ 缓存                                        │</span></span>
+<span class="line"><span>│     ├─ 异步                                        │</span></span>
+<span class="line"><span>│     ├─ 限流                                        │</span></span>
+<span class="line"><span>│     └─ 代码优化                                     │</span></span>
+<span class="line"><span>│                                                     │</span></span>
+<span class="line"><span>│  3. 中期优化（增加资源）                            │</span></span>
+<span class="line"><span>│     ├─ 垂直扩展（升级配置）                         │</span></span>
+<span class="line"><span>│     └─ 水平扩展（加机器）                           │</span></span>
+<span class="line"><span>│                                                     │</span></span>
+<span class="line"><span>│  4. 长期优化（架构调整）                            │</span></span>
+<span class="line"><span>│     ├─ 分库分表                                    │</span></span>
+<span class="line"><span>│     ├─ 微服务拆分                                  │</span></span>
+<span class="line"><span>│     └─ 引入MQ削峰                                  │</span></span>
+<span class="line"><span>│                                                     │</span></span>
+<span class="line"><span>└─────────────────────────────────────────────────────┘</span></span></code></pre></div><h3 id="追问5-如何设置合理的线程数" tabindex="-1">追问5：如何设置合理的线程数？ <a class="header-anchor" href="#追问5-如何设置合理的线程数" aria-label="Permalink to &quot;追问5：如何设置合理的线程数？&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>公式：</span></span>
+<span class="line"><span>线程数 = CPU核心数 × 目标CPU利用率 × (1 + 等待时间/计算时间)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>举例：</span></span>
+<span class="line"><span>- 4核CPU</span></span>
+<span class="line"><span>- 目标CPU利用率：80%</span></span>
+<span class="line"><span>- 业务：等待时间10ms，计算时间5ms (IO密集型)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>线程数 = 4 × 0.8 × (1 + 10/5) = 4 × 0.8 × 3 = 9.6 ≈ 10</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>实际建议：</span></span>
+<span class="line"><span>┌─────────────────────────────────────────────────────┐</span></span>
+<span class="line"><span>│  CPU密集型：CPU核心数 + 1~2                        │</span></span>
+<span class="line"><span>│  例如：4核 → 5-6个线程                             │</span></span>
+<span class="line"><span>│                                                     │</span></span>
+<span class="line"><span>│  IO密集型：CPU核心数 × 2                           │</span></span>
+<span class="line"><span>│  例如：4核 → 8个线程                               │</span></span>
+<span class="line"><span>│                                                     │</span></span>
+<span class="line"><span>│  混合型：CPU核心数 × (1 + 等待/计算)               │</span></span>
+<span class="line"><span>└─────────────────────────────────────────────────────┘</span></span></code></pre></div><h3 id="追问6-qps-vs-并发数的关系" tabindex="-1">追问6：QPS vs 并发数的关系 <a class="header-anchor" href="#追问6-qps-vs-并发数的关系" aria-label="Permalink to &quot;追问6：QPS vs 并发数的关系&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>并发数 = QPS × 平均响应时间</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>举例：</span></span>
+<span class="line"><span>- QPS = 1000</span></span>
+<span class="line"><span>- 平均RT = 100ms = 0.1s</span></span>
+<span class="line"><span>- 并发数 = 1000 × 0.1 = 100</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>实际意义：</span></span>
+<span class="line"><span>- 并发100不代表同时有100个请求在处理</span></span>
+<span class="line"><span>- 可能是QPS高，RT短</span></span>
+<span class="line"><span>- 1000 QPS + 100ms RT = 并发100</span></span>
+<span class="line"><span>- 100 QPS + 1s RT = 也是并发100</span></span></code></pre></div><h2 id="实际开发中的qps优化" tabindex="-1">实际开发中的QPS优化 <a class="header-anchor" href="#实际开发中的qps优化" aria-label="Permalink to &quot;实际开发中的QPS优化&quot;">​</a></h2><h3 id="日常开发如何考虑qps" tabindex="-1">日常开发如何考虑QPS？ <a class="header-anchor" href="#日常开发如何考虑qps" aria-label="Permalink to &quot;日常开发如何考虑QPS？&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>1. 接口设计阶段</span></span>
+<span class="line"><span>   ┌─────────────────────────────────────────────┐</span></span>
+<span class="line"><span>   │  • 查为主的接口 → 可接受高QPS               │</span></span>
+<span class="line"><span>   │  • 写为主的接口 → 关注一致性               │</span></span>
+<span class="line"><span>   │  • 复杂计算 → 考虑异步/批量               │</span></span>
+<span class="line"><span>   └─────────────────────────────────────────────┘</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>2. 技术选型阶段</span></span>
+<span class="line"><span>   ┌─────────────────────────────────────────────┐</span></span>
+<span class="line"><span>   │  • QPS &lt; 1000 → 单机MySQL + Redis           │</span></span>
+<span class="line"><span>   │  • QPS &lt; 10000 → 读写分离 + Redis           │</span></span>
+<span class="line"><span>   │  • QPS &gt; 10000 → 分库分表 + ES              │</span></span>
+<span class="line"><span>   └─────────────────────────────────────────────┘</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>3. 上线评估阶段</span></span>
+<span class="line"><span>   ┌─────────────────────────────────────────────┐</span></span>
+<span class="line"><span>   │  • 预估QPS                                  │</span></span>
+<span class="line"><span>   │  • 准备对应配置                             │</span></span>
+<span class="line"><span>   │  • 制定扩容预案                             │</span></span>
+<span class="line"><span>   └─────────────────────────────────────────────┘</span></span></code></pre></div><h3 id="代码层面的qps优化" tabindex="-1">代码层面的QPS优化 <a class="header-anchor" href="#代码层面的qps优化" aria-label="Permalink to &quot;代码层面的QPS优化&quot;">​</a></h3><div class="language-java vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">java</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 优化前：高QPS下性能差</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">public</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> User </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">getUser</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(Long id) {</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    // 每次都查数据库</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    return</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> userMapper.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">selectById</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(id);</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 优化后：使用缓存</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">public</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> User </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">getUser</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(Long id) {</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    // 1. 先查本地缓存</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    User user </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> localCache.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">get</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(id);</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (user </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">!=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> null</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) {</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">        return</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> user;</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    }</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    </span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    // 2. 再查Redis</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    user </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> redis.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">get</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;user:&quot;</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> +</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> id);</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (user </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">!=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> null</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) {</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        localCache.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">put</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(id, user);</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">        return</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> user;</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    }</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    </span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    // 3. 最后查数据库</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    user </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> userMapper.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">selectById</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(id);</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    if</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (user </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">!=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> null</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) {</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        redis.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">set</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;user:&quot;</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> +</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> id, user);</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        localCache.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">put</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(id, user);</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    }</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    return</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> user;</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span></code></pre></div><h3 id="面试加分总结" tabindex="-1">面试加分总结 <a class="header-anchor" href="#面试加分总结" aria-label="Permalink to &quot;面试加分总结&quot;">​</a></h3><blockquote><p>&quot;我在工作中会这样评估系统QPS：</p><p>首先，明确业务类型——查多写少还是写多查少，这决定了优化方向。然后，根据服务器配置给出一个预估：4核8G常规业务大概能抗1500-2000QPS。最后，我会预留30%的余量，因为线上流量往往比预估高30%-50%。</p><p>当单机达到瓶颈时，我的处理顺序是：先优化代码和缓存，其次考虑垂直升级，最后才是水平扩展。盲目加机器是最省事但也是最贵的方案。&quot;</p></blockquote><h2 id="相关知识点" tabindex="-1">相关知识点 <a class="header-anchor" href="#相关知识点" aria-label="Permalink to &quot;相关知识点&quot;">​</a></h2><ul><li><a href="./q5-jvm-tuning.html">Q5: JVM调优与排查</a> - 配合GC优化提升QPS</li><li><a href="/interview-guide/03-database/q10-redis.html">Q16: Redis数据结构与分布式锁</a> - 缓存提升QPS</li><li><a href="/interview-guide/03-database/q11-mysql-optimization.html">Q17: MySQL索引优化与分库分表</a> - 数据库优化提升QPS</li></ul></div></div></main><footer class="VPDocFooter" data-v-39a288b8 data-v-e257564d><!--[--><!--]--><!----><nav class="prev-next" aria-labelledby="doc-footer-aria-label" data-v-e257564d><span class="visually-hidden" id="doc-footer-aria-label" data-v-e257564d>Pager</span><div class="pager" data-v-e257564d><a class="VPLink link pager-link prev" href="/interview-guide/01-java/q8-jvm-memory-model.html" data-v-e257564d><!--[--><span class="desc" data-v-e257564d>Previous page</span><span class="title" data-v-e257564d>Q8: JVM内存模型深度剖析</span><!--]--></a></div><div class="pager" data-v-e257564d><a class="VPLink link pager-link next" href="/interview-guide/02-microservice/q6-springcloud.html" data-v-e257564d><!--[--><span class="desc" data-v-e257564d>Next page</span><span class="title" data-v-e257564d>Q12: Spring Cloud核心组件</span><!--]--></a></div></nav></footer><!--[--><!--]--></div></div></div><!--[--><!--]--></div></div><!----><!--[--><!--]--></div></div>
+    <script>window.__VP_HASH_MAP__=JSON.parse("{\"01-java_q1-synchronized.md\":\"gg5NEIHr\",\"01-java_q2-threadpool.md\":\"DFmpn8nx\",\"01-java_q3-volatile.md\":\"DVChNBRK\",\"01-java_q4-jvm.md\":\"C6hpw0wh\",\"01-java_q5-jvm-tuning.md\":\"C6F8OlbZ\",\"01-java_q6-concurrent-hashmap.md\":\"DKErJYPS\",\"01-java_q7-generational-gc.md\":\"DfLL46fx\",\"01-java_q8-jvm-memory-model.md\":\"BPF8l2q9\",\"01-java_q9-throughput-qps.md\":\"YiJJovfT\",\"02-microservice_q6-springcloud.md\":\"R2dm2lR8\",\"02-microservice_q7-seata.md\":\"Dyk9RgV2\",\"02-microservice_q8-high-availability.md\":\"BtFyLlcm\",\"02-microservice_q9-context-passing.md\":\"DbUd_xC3\",\"03-database_q10-redis.md\":\"CqK4lxIM\",\"03-database_q11-mysql-optimization.md\":\"Cei_1DaN\",\"03-database_q12-mq.md\":\"pSM8SH1s\",\"03-database_q13-cross-shard-query.md\":\"BzUtc8mq\",\"04-design_q14-design-patterns.md\":\"CgC-u7yv\",\"04-design_q15-seckill-system.md\":\"DL5vTI2y\",\"04-design_q16-microservice-architecture.md\":\"BcwXlTUI\",\"05-security_q17-jwt.md\":\"p844f-wH\",\"05-security_q18-sso.md\":\"BXAz1Qx4\",\"05-security_q19-security.md\":\"Ji8T7y7H\",\"05-security_q20-idempotent.md\":\"CEieu64c\",\"06-middleware_q21-redis-cache.md\":\"B3ld9x0v\",\"06-middleware_q22-es-sync.md\":\"CudnBwlJ\",\"06-middleware_q23-api-design.md\":\"BySmzqBL\",\"06-middleware_q24-arthas.md\":\"CdsQTWVu\",\"06-middleware_q25-mysql-replication.md\":\"Dt1NNSca\",\"06-middleware_q26-multi-level-cache.md\":\"Bc1asPUK\",\"06-middleware_q27-distributed-id.md\":\"Cqf5Sgf1\",\"06-middleware_q28-payment-system.md\":\"CB5P3CTs\",\"06-middleware_q29-performance-optimization.md\":\"BLF33y9l\",\"06-middleware_q30-seckill-ha.md\":\"BrTEc6aQ\",\"07-project_q31-challenging-project.md\":\"WzJqVaqL\",\"07-project_q32-career-plan.md\":\"Btz5LZCL\",\"07-project_q33-questions.md\":\"vhQ8_r1z\",\"index.md\":\"Db-LcrnO\"}");window.__VP_SITE_DATA__=JSON.parse("{\"lang\":\"en-US\",\"dir\":\"ltr\",\"title\":\"面试指南\",\"description\":\"高级Java开发工程师面试题汇总\",\"base\":\"/interview-guide/\",\"head\":[],\"router\":{\"prefetchLinks\":true},\"appearance\":true,\"themeConfig\":{\"nav\":[{\"text\":\"首页\",\"link\":\"/\"}],\"sidebar\":[{\"text\":\"Java核心\",\"items\":[{\"text\":\"Q1: synchronized和ReentrantLock\",\"link\":\"/01-java/q1-synchronized\"},{\"text\":\"Q2: ThreadPoolExecutor\",\"link\":\"/01-java/q2-threadpool\"},{\"text\":\"Q3: volatile与happens-before\",\"link\":\"/01-java/q3-volatile\"},{\"text\":\"Q4: JVM内存模型和垃圾回收\",\"link\":\"/01-java/q4-jvm\"},{\"text\":\"Q5: JVM调优与排查\",\"link\":\"/01-java/q5-jvm-tuning\"},{\"text\":\"Q6: ConcurrentHashMap深度剖析\",\"link\":\"/01-java/q6-concurrent-hashmap\"},{\"text\":\"Q7: Java分代回收深度剖析\",\"link\":\"/01-java/q7-generational-gc\"},{\"text\":\"Q8: JVM内存模型深度剖析\",\"link\":\"/01-java/q8-jvm-memory-model\"},{\"text\":\"Q9: 吞吐量与QPS深度剖析\",\"link\":\"/01-java/q9-throughput-qps\"}]},{\"text\":\"SpringCloud与微服务\",\"items\":[{\"text\":\"Q12: Spring Cloud核心组件\",\"link\":\"/02-microservice/q6-springcloud\"},{\"text\":\"Q13: 分布式事务Seata\",\"link\":\"/02-microservice/q7-seata\"},{\"text\":\"Q14: 微服务高可用\",\"link\":\"/02-microservice/q8-high-availability\"},{\"text\":\"Q15: 服务间上下文传递\",\"link\":\"/02-microservice/q9-context-passing\"}]},{\"text\":\"数据库与缓存\",\"items\":[{\"text\":\"Q16: Redis数据结构与分布式锁\",\"link\":\"/03-database/q10-redis\"},{\"text\":\"Q17: MySQL索引优化与分库分表\",\"link\":\"/03-database/q11-mysql-optimization\"},{\"text\":\"Q18: 消息队列\",\"link\":\"/03-database/q12-mq\"},{\"text\":\"Q19: 跨片查询\",\"link\":\"/03-database/q13-cross-shard-query\"}]},{\"text\":\"设计模式与系统设计\",\"items\":[{\"text\":\"Q20: 设计模式\",\"link\":\"/04-design/q14-design-patterns\"},{\"text\":\"Q21: 秒杀系统设计\",\"link\":\"/04-design/q15-seckill-system\"},{\"text\":\"Q22: 微服务架构设计\",\"link\":\"/04-design/q16-microservice-architecture\"}]},{\"text\":\"认证授权与安全\",\"items\":[{\"text\":\"Q23: JWT Token\",\"link\":\"/05-security/q17-jwt\"},{\"text\":\"Q24: SSO单点登录\",\"link\":\"/05-security/q18-sso\"},{\"text\":\"Q25: 安全防护\",\"link\":\"/05-security/q19-security\"},{\"text\":\"Q26: 接口幂等\",\"link\":\"/05-security/q20-idempotent\"}]},{\"text\":\"分布式系统与中间件\",\"items\":[{\"text\":\"Q27: Redis缓存问题\",\"link\":\"/06-middleware/q21-redis-cache\"},{\"text\":\"Q28: ES同步与优化\",\"link\":\"/06-middleware/q22-es-sync\"},{\"text\":\"Q29: API设计\",\"link\":\"/06-middleware/q23-api-design\"},{\"text\":\"Q30: Arthas使用\",\"link\":\"/06-middleware/q24-arthas\"},{\"text\":\"Q31: MySQL主从复制\",\"link\":\"/06-middleware/q25-mysql-replication\"},{\"text\":\"Q32: 多级缓存架构\",\"link\":\"/06-middleware/q26-multi-level-cache\"},{\"text\":\"Q33: 分布式ID\",\"link\":\"/06-middleware/q27-distributed-id\"},{\"text\":\"Q34: 支付系统设计\",\"link\":\"/06-middleware/q28-payment-system\"},{\"text\":\"Q35: 性能优化\",\"link\":\"/06-middleware/q29-performance-optimization\"},{\"text\":\"Q36: 秒杀高可用方案\",\"link\":\"/06-middleware/q30-seckill-ha\"}]},{\"text\":\"项目与职业发展\",\"items\":[{\"text\":\"Q37: 有挑战的项目\",\"link\":\"/07-project/q31-challenging-project\"},{\"text\":\"Q38: 职业规划\",\"link\":\"/07-project/q32-career-plan\"},{\"text\":\"Q39: 反问面试官\",\"link\":\"/07-project/q33-questions\"}]}]},\"locales\":{},\"scrollOffset\":134,\"cleanUrls\":false}");</script>
+    
+  </body>
+</html>
