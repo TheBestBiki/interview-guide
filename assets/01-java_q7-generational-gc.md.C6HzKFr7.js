@@ -1,0 +1,327 @@
+import{_ as a,o as n,c as p,ae as l}from"./chunks/framework.CC-i3qbO.js";const k=JSON.parse('{"title":"Q7: Java分代回收深度剖析","description":"","frontmatter":{},"headers":[],"relativePath":"01-java/q7-generational-gc.md","filePath":"01-java/q7-generational-gc.md"}'),i={name:"01-java/q7-generational-gc.md"};function e(t,s,c,h,d,r){return n(),p("div",null,[...s[0]||(s[0]=[l(`<h1 id="q7-java分代回收深度剖析" tabindex="-1">Q7: Java分代回收深度剖析 <a class="header-anchor" href="#q7-java分代回收深度剖析" aria-label="Permalink to &quot;Q7: Java分代回收深度剖析&quot;">​</a></h1><h2 id="为什么要分代" tabindex="-1">为什么要分代？ <a class="header-anchor" href="#为什么要分代" aria-label="Permalink to &quot;为什么要分代？&quot;">​</a></h2><p><strong>核心问题</strong>：不同对象的生命周期差异巨大。</p><table tabindex="0"><thead><tr><th>对象生命周期</th><th>占比</th><th>特点</th></tr></thead><tbody><tr><td>短命对象</td><td>~98%</td><td>朝生夕死，适合复制算法</td></tr><tr><td>长寿对象</td><td>~2%</td><td>存活久，适合标记-整理</td></tr></tbody></table><p><strong>分代策略</strong>：根据对象年龄分配到不同区域，用最合适的算法回收。</p><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>┌─────────────────────────────────────────┐</span></span>
+<span class="line"><span>│                   堆内存                  │</span></span>
+<span class="line"><span>├────────────────────┬────────────────────┤</span></span>
+<span class="line"><span>│      新生代 (Young)    │    老年代 (Old)      │</span></span>
+<span class="line"><span>│  ┌────┬────┬─────┐   │                     │</span></span>
+<span class="line"><span>│  │Eden│From│ To  │   │                     │</span></span>
+<span class="line"><span>│  └────┴────┴─────┘   │                     │</span></span>
+<span class="line"><span>│   8:1:1               │                     │</span></span>
+<span class="line"><span>└────────────────────┴────────────────────┘</span></span></code></pre></div><h2 id="jdk版本演进-分代回收的发展史" tabindex="-1">JDK版本演进：分代回收的发展史 <a class="header-anchor" href="#jdk版本演进-分代回收的发展史" aria-label="Permalink to &quot;JDK版本演进：分代回收的发展史&quot;">​</a></h2><h3 id="jdk-1-7-分代回收走向成熟" tabindex="-1">JDK 1.7：分代回收走向成熟 <a class="header-anchor" href="#jdk-1-7-分代回收走向成熟" aria-label="Permalink to &quot;JDK 1.7：分代回收走向成熟&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>HotSpot VM (JDK 1.7)</span></span>
+<span class="line"><span>├── Serial GC (单线程)</span></span>
+<span class="line"><span>│   ├── 新生代: Serial (复制)</span></span>
+<span class="line"><span>│   └── 老年代: Serial Old (标记-整理)</span></span>
+<span class="line"><span>├── Parallel GC (多线程)</span></span>
+<span class="line"><span>│   ├── 新生代: Parallel Scavenge (复制)</span></span>
+<span class="line"><span>│   └── 老年代: Parallel Old (标记-整理)</span></span>
+<span class="line"><span>└── CMS GC (并发)</span></span>
+<span class="line"><span>    ├── 初始标记 (STW) → Root对象</span></span>
+<span class="line"><span>    ├── 并发标记 → 追踪存活对象</span></span>
+<span class="line"><span>    ├── 重新标记 (STW) → 修正标记</span></span>
+<span class="line"><span>    └── 并发清除 → 清理死亡对象</span></span></code></pre></div><p><strong>特点</strong>：</p><ul><li>默认使用Parallel GC</li><li>CMS开始流行（降低停顿时间）</li><li>Perm Gen（永久代）还在</li></ul><h3 id="jdk-1-8-移除perm-gen-引入metaspace" tabindex="-1">JDK 1.8：移除Perm Gen，引入Metaspace <a class="header-anchor" href="#jdk-1-8-移除perm-gen-引入metaspace" aria-label="Permalink to &quot;JDK 1.8：移除Perm Gen，引入Metaspace&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>变化：</span></span>
+<span class="line"><span>- 移除 Perm Gen (永久代)</span></span>
+<span class="line"><span>- 新增 Metaspace (元空间) → native内存</span></span>
+<span class="line"><span>- 默认垃圾回收器: Parallel GC</span></span>
+<span class="line"><span>- String.intern() 移到堆内存</span></span></code></pre></div><h3 id="jdk-1-9-jdk-11-g1成为默认-zgc-shenandoah问世" tabindex="-1">JDK 1.9 - JDK 11：G1成为默认，ZGC/Shenandoah问世 <a class="header-anchor" href="#jdk-1-9-jdk-11-g1成为默认-zgc-shenandoah问世" aria-label="Permalink to &quot;JDK 1.9 - JDK 11：G1成为默认，ZGC/Shenandoah问世&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>JDK 9: G1成为默认GC</span></span>
+<span class="line"><span>JDK 11: ZGC (实验)、Epsilon GC</span></span>
+<span class="line"><span>JDK 12: Shenandoah (实验)、G1可中断混合回收</span></span>
+<span class="line"><span>JDK 13: ZGC支持类卸载</span></span>
+<span class="line"><span>JDK 14: 移除CMS</span></span>
+<span class="line"><span>JDK 15: Shenandoah正式可用</span></span></code></pre></div><h3 id="jdk-14-jdk-21-gc持续进化" tabindex="-1">JDK 14 - JDK 21：GC持续进化 <a class="header-anchor" href="#jdk-14-jdk-21-gc持续进化" aria-label="Permalink to &quot;JDK 14 - JDK 21：GC持续进化&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>JDK 14: 移除CMS</span></span>
+<span class="line"><span>JDK 15: Shenandoah正式GA</span></span>
+<span class="line"><span>JDK 16: ZGC并发线程堆栈处理优化</span></span>
+<span class="line"><span>JDK 17: ZGC正式GA、取消G1 Humongous对象年龄阈值</span></span>
+<span class="line"><span>JDK 19: ZGC支持Windows和macOS</span></span>
+<span class="line"><span>JDK 21: ZGC支持分代 (ZGC Generational)</span></span></code></pre></div><h2 id="分代回收核心流程" tabindex="-1">分代回收核心流程 <a class="header-anchor" href="#分代回收核心流程" aria-label="Permalink to &quot;分代回收核心流程&quot;">​</a></h2><h3 id="minor-gc-新生代gc" tabindex="-1">Minor GC（新生代GC） <a class="header-anchor" href="#minor-gc-新生代gc" aria-label="Permalink to &quot;Minor GC（新生代GC）&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>触发条件：Eden区满</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>流程：</span></span>
+<span class="line"><span>1. 扫描Eden + From Survivor中存活对象</span></span>
+<span class="line"><span>2. 复制到To Survivor</span></span>
+<span class="line"><span>3. 年龄+1，超过阈值晋升老年代</span></span>
+<span class="line"><span>4. 交换From/To指针</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>特点：</span></span>
+<span class="line"><span>- Stop The World (STW)，但时间短</span></span>
+<span class="line"><span>- 频繁发生（对象创建快）</span></span>
+<span class="line"><span>- 复制算法，内存效率高</span></span></code></pre></div><h3 id="major-full-gc-老年代gc" tabindex="-1">Major/Full GC（老年代GC） <a class="header-anchor" href="#major-full-gc-老年代gc" aria-label="Permalink to &quot;Major/Full GC（老年代GC）&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>触发条件：</span></span>
+<span class="line"><span>1. 老年代空间不足</span></span>
+<span class="line"><span>2. MetaSpace满</span></span>
+<span class="line"><span>3. System.gc()调用</span></span>
+<span class="line"><span>4. Minor GC后晋升平均年龄 &gt; 阈值</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>流程（以CMS为例）：</span></span>
+<span class="line"><span>1. 初始标记 (STW) → 标记Root可达对象</span></span>
+<span class="line"><span>2. 并发标记 → 追踪存活对象</span></span>
+<span class="line"><span>3. 重新标记 (STW) → 修正并发期间变化</span></span>
+<span class="line"><span>4. 并发清除 → 清理死亡对象</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>问题：</span></span>
+<span class="line"><span>- 内存碎片化</span></span>
+<span class="line"><span>- 并发模式失败 (Concurrent Mode Failure)</span></span>
+<span class="line"><span>- 浮动垃圾</span></span></code></pre></div><h2 id="对象晋升机制" tabindex="-1">对象晋升机制 <a class="header-anchor" href="#对象晋升机制" aria-label="Permalink to &quot;对象晋升机制&quot;">​</a></h2><h3 id="年龄阈值" tabindex="-1">年龄阈值 <a class="header-anchor" href="#年龄阈值" aria-label="Permalink to &quot;年龄阈值&quot;">​</a></h3><div class="language-java vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">java</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 对象年龄计算</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">age </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> object.age </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">+</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 1</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 晋升条件（满足任一）：</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 1. 年龄 &gt;= MaxTenuringThreshold (默认6)</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 2. To Survivor区同龄对象占比 &gt; 50%</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 查看年龄</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">XX</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">:+</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">PrintTenuringDistribution</span></span></code></pre></div><h3 id="动态年龄计算" tabindex="-1">动态年龄计算 <a class="header-anchor" href="#动态年龄计算" aria-label="Permalink to &quot;动态年龄计算&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>JDK引入&quot;动态年龄&quot;：</span></span>
+<span class="line"><span>- 不只看年龄，还看To Survivor区同龄对象占比</span></span>
+<span class="line"><span>- 避免大对象提前晋升导致老年代空间不足</span></span>
+<span class="line"><span>- 目标：To Survivor区使用率 ≤ 50%</span></span></code></pre></div><h3 id="对象头结构" tabindex="-1">对象头结构 <a class="header-anchor" href="#对象头结构" aria-label="Permalink to &quot;对象头结构&quot;">​</a></h3><div class="language-cpp vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">cpp</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">// 对象头 (64位JVM)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">┌────────────────────────────────────┐</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">│ Mark </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">Word</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">64</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">位)                   │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">│   </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> 哈希码 (</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">31</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">位)                   │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">│   </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> 分代年龄 (</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">4</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">位)                  │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">│   </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> 偏向锁标志 (</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">位)                │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">│   </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> 锁状态标志 (</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">2</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">位)                │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">├────────────────────────────────────┤</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">│ Klass </span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">Pointer</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">64</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">位) → 类元数据    │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">├────────────────────────────────────┤</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">│ 实例数据                           │</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">└────────────────────────────────────┘</span></span></code></pre></div><h2 id="垃圾回收器深度对比" tabindex="-1">垃圾回收器深度对比 <a class="header-anchor" href="#垃圾回收器深度对比" aria-label="Permalink to &quot;垃圾回收器深度对比&quot;">​</a></h2><h3 id="serial-vs-parallel-vs-cms-vs-g1-vs-zgc" tabindex="-1">Serial vs Parallel vs CMS vs G1 vs ZGC <a class="header-anchor" href="#serial-vs-parallel-vs-cms-vs-g1-vs-zgc" aria-label="Permalink to &quot;Serial vs Parallel vs CMS vs G1 vs ZGC&quot;">​</a></h3><table tabindex="0"><thead><tr><th>特性</th><th>Serial</th><th>Parallel</th><th>CMS</th><th>G1</th><th>ZGC</th></tr></thead><tbody><tr><td>线程</td><td>单线程</td><td>多线程</td><td>并发</td><td>并发</td><td>并发</td></tr><tr><td>STW</td><td>长</td><td>中</td><td>短</td><td>可控</td><td>&lt;1ms</td></tr><tr><td>内存</td><td>小</td><td>中</td><td>中</td><td>大</td><td>超大</td></tr><tr><td>吞吐量</td><td>低</td><td>高</td><td>中</td><td>平衡</td><td>高</td></tr><tr><td>碎片</td><td>无</td><td>无</td><td>有</td><td>无</td><td>无</td></tr><tr><td>JDK默认</td><td>1.7 Client</td><td>1.7 Server</td><td>-</td><td>9+</td><td>15+</td></tr></tbody></table><h3 id="g1详解-区域化分代" tabindex="-1">G1详解：区域化分代 <a class="header-anchor" href="#g1详解-区域化分代" aria-label="Permalink to &quot;G1详解：区域化分代&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>G1 (Garbage First) 核心思想：</span></span>
+<span class="line"><span>- 把堆分成多个大小相等的Region (1MB-32MB)</span></span>
+<span class="line"><span>- 每个Region可以独立作为Eden/Survivor/Old</span></span>
+<span class="line"><span>- 优先回收垃圾最多的Region</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>Region结构：</span></span>
+<span class="line"><span>┌──────────────────────────────────────┐</span></span>
+<span class="line"><span>│  Eden Region (多个)                   │</span></span>
+<span class="line"><span>├──────────────────────────────────────┤</span></span>
+<span class="line"><span>│  Survivor Region (多个)               │</span></span>
+<span class="line"><span>├──────────────────────────────────────┤</span></span>
+<span class="line"><span>│  Old Region (多个)                   │</span></span>
+<span class="line"><span>├──────────────────────────────────────┤</span></span>
+<span class="line"><span>│  Humongous Region (大对象)           │</span></span>
+<span class="line"><span>└──────────────────────────────────────┘</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>Humongous对象：</span></span>
+<span class="line"><span>- 超过Region 50%的对象</span></span>
+<span class="line"><span>- 连续多个Region存储</span></span>
+<span class="line"><span>- 回收效率低，尽量避免</span></span></code></pre></div><h3 id="zgc-亚毫秒级延迟" tabindex="-1">ZGC：亚毫秒级延迟 <a class="header-anchor" href="#zgc-亚毫秒级延迟" aria-label="Permalink to &quot;ZGC：亚毫秒级延迟&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>ZGC (Z Garbage Collector) 核心：</span></span>
+<span class="line"><span>- 并发执行所有阶段</span></span>
+<span class="line"><span>- 着色指针 (Colored Pointers)</span></span>
+<span class="line"><span>- 读屏障 (Load Barriers)</span></span>
+<span class="line"><span>- 基于Region的内存布局</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>着色指针 (64位)：</span></span>
+<span class="line"><span>┌────────────────────────────────────┐</span></span>
+<span class="line"><span>│ 47位: 地址空间  (128TB)             │</span></span>
+<span class="line"><span>│ 1位: Marked0                        │</span></span>
+<span class="line"><span>│ 1位: Marked1                        │</span></span>
+<span class="line"><span>│ 1位: Remapped                       │</span></span>
+<span class="line"><span>│ 4位: 预留                           │</span></span>
+<span class="line"><span>│ 10位: 0 (对齐)                      │</span></span>
+<span class="line"><span>└────────────────────────────────────┘</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>阶段：</span></span>
+<span class="line"><span>1. 初始标记 (STW) → Root</span></span>
+<span class="line"><span>2. 并发标记 → 追踪</span></span>
+<span class="line"><span>3. 再标记 (STW) → 修正</span></span>
+<span class="line"><span>4. 并发重映射 → 修复指针</span></span>
+<span class="line"><span>5. 并发引用处理</span></span>
+<span class="line"><span>6. 并发内存归还</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>优势：</span></span>
+<span class="line"><span>- 停顿时间 &lt; 1ms</span></span>
+<span class="line"><span>- 堆大小可达 16TB</span></span>
+<span class="line"><span>- 吞吐量不下降</span></span></code></pre></div><h2 id="面试高频追问" tabindex="-1">面试高频追问 <a class="header-anchor" href="#面试高频追问" aria-label="Permalink to &quot;面试高频追问&quot;">​</a></h2><h3 id="追问1-为什么survivor区要分成两个" tabindex="-1">追问1：为什么Survivor区要分成两个？ <a class="header-anchor" href="#追问1-为什么survivor区要分成两个" aria-label="Permalink to &quot;追问1：为什么Survivor区要分成两个？&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>目的：避免内存碎片，支持复制算法</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>原理：</span></span>
+<span class="line"><span>┌─────────────────┐</span></span>
+<span class="line"><span>│  Eden + From    │  →  扫描存活对象</span></span>
+<span class="line"><span>│       ↓        │      复制到 To</span></span>
+<span class="line"><span>│  To Survivor   │  →  交换角色</span></span>
+<span class="line"><span>└─────────────────┘</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>如果不分区：</span></span>
+<span class="line"><span>- 复制后留下空洞</span></span>
+<span class="line"><span>- 需要额外整理</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>两个Survivor的好处：</span></span>
+<span class="line"><span>- 空的To区作为复制目标</span></span>
+<span class="line"><span>- 简单高效，不需要整理</span></span>
+<span class="line"><span>- From/To交换角色</span></span></code></pre></div><h3 id="追问2-对象一定在eden区分配吗" tabindex="-1">追问2：对象一定在Eden区分配吗？ <a class="header-anchor" href="#追问2-对象一定在eden区分配吗" aria-label="Permalink to &quot;追问2：对象一定在Eden区分配吗？&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>不一定！以下情况直接在Old区分配：</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>1. 大对象</span></span>
+<span class="line"><span>   -XX:PretenureSizeThreshold=1MB</span></span>
+<span class="line"><span>   &gt; 该阈值的对象直接在老年代分配</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>2. 长期存活对象</span></span>
+<span class="line"><span>   - 年龄达到阈值后晋升</span></span>
+<span class="line"><span>   - 动态年龄计算也可能提前晋升</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>3. 分配担保</span></span>
+<span class="line"><span>   Minor GC前，检查老年代可用空间</span></span>
+<span class="line"><span>   如果不足，对象直接放老年代</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>4. TLAB (Thread Local Allocation Buffer)</span></span>
+<span class="line"><span>   - 每个线程预分配一小块Eden区</span></span>
+<span class="line"><span>   - 减少线程竞争，提高分配效率</span></span></code></pre></div><h3 id="追问3-minor-gc一定会触发full-gc吗" tabindex="-1">追问3：Minor GC一定会触发Full GC吗？ <a class="header-anchor" href="#追问3-minor-gc一定会触发full-gc吗" aria-label="Permalink to &quot;追问3：Minor GC一定会触发Full GC吗？&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>不一定！但以下情况会触发：</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>1. 老年代空间不足</span></span>
+<span class="line"><span>   Minor GC后，Survivor区对象需要晋升</span></span>
+<span class="line"><span>   但老年代空间不够 → Full GC</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>2. 分配担保失败</span></span>
+<span class="line"><span>   老年代最大可用连续空间 &lt; 晋升对象大小</span></span>
+<span class="line"><span>   → Full GC</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>3. MetaSpace满</span></span>
+<span class="line"><span>   类加载过多，元空间不足</span></span>
+<span class="line"><span>   → Full GC (触发Metaspace GC)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>4. System.gc()</span></span>
+<span class="line"><span>   显式调用，可能触发Full GC</span></span></code></pre></div><h3 id="追问4-g1的mixed-gc是什么" tabindex="-1">追问4：G1的Mixed GC是什么？ <a class="header-anchor" href="#追问4-g1的mixed-gc是什么" aria-label="Permalink to &quot;追问4：G1的Mixed GC是什么？&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>Mixed GC = 年轻代 + 老年Regions</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>触发条件：</span></span>
+<span class="line"><span>- 堆占用率达到 -XX:InitiatingHeapOccupancyPercent (默认45%)</span></span>
+<span class="line"><span>- 或者 -XX:G1HeapWastePercent (默认5%)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>流程：</span></span>
+<span class="line"><span>1. 年轻代回收 (Young GC)</span></span>
+<span class="line"><span>2. 选若干个高回收价值的Old区</span></span>
+<span class="line"><span>3. 混合回收 (Mixed GC)</span></span>
+<span class="line"><span>4. 多次Mixed GC后，进入下一个周期</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>G1收集周期：</span></span>
+<span class="line"><span>Young → Mixed → Young → Mixed → ... → Full GC (如果来不及回收)</span></span></code></pre></div><h3 id="追问5-cms和g1的并发标记有什么区别" tabindex="-1">追问5：CMS和G1的并发标记有什么区别？ <a class="header-anchor" href="#追问5-cms和g1的并发标记有什么区别" aria-label="Permalink to &quot;追问5：CMS和G1的并发标记有什么区别？&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>CMS (Concurrent Mark Sweep)：</span></span>
+<span class="line"><span>┌────────────────────────────────────────┐</span></span>
+<span class="line"><span>│ 1. 初始标记 (STW)     → Root          │</span></span>
+<span class="line"><span>│ 2. 并发标记           → 追踪          │ ← 耗时最长</span></span>
+<span class="line"><span>│ 3. 重新标记 (STW)     → 修正          │</span></span>
+<span class="line"><span>│ 4. 并发清除           → 清理          │</span></span>
+<span class="line"><span>└────────────────────────────────────────┘</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>问题：</span></span>
+<span class="line"><span>- 浮动垃圾 (Concurrent Mode Failure)</span></span>
+<span class="line"><span>- 内存碎片 (-XX:CMSFullGCsBeforeCompaction)</span></span>
+<span class="line"><span>- 停顿时间不可控</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>G1：</span></span>
+<span class="line"><span>┌────────────────────────────────────────┐</span></span>
+<span class="line"><span>│ 1. 初始标记 (STW)     → Root          │</span></span>
+<span class="line"><span>│ 2. 并发标记           → SATB算法      │</span></span>
+<span class="line"><span>│ 3. 最终标记 (STW)     → 修正          │</span></span>
+<span class="line"><span>│ 4. 筛选回收 (STW)     → 分区回收     │ ← 可中断</span></span>
+<span class="line"><span>└────────────────────────────────────────┘</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>优势：</span></span>
+<span class="line"><span>- 增量式，可中断混合回收</span></span>
+<span class="line"><span>- 明确停顿时间目标</span></span>
+<span class="line"><span>- 预测模型</span></span></code></pre></div><h3 id="追问6-为什么需要三色标记算法" tabindex="-1">追问6：为什么需要三色标记算法？ <a class="header-anchor" href="#追问6-为什么需要三色标记算法" aria-label="Permalink to &quot;追问6：为什么需要三色标记算法？&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>三色标记 = 并发标记时的&quot;状态机&quot;</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>三色：</span></span>
+<span class="line"><span>- 白色：未访问</span></span>
+<span class="line"><span>- 灰色：自身访问过，子节点未访问</span></span>
+<span class="line"><span>- 黑色：自身和子节点都访问完</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>并发问题：</span></span>
+<span class="line"><span>┌─────────────────────────────────────┐</span></span>
+<span class="line"><span>│  线程A (标记)      线程B (应用)      │</span></span>
+<span class="line"><span>│     ↓              ↓               │</span></span>
+<span class="line"><span>│  B:黑色          obj.field = null   │</span></span>
+<span class="line"><span>│  A:继续          B变成白色          │</span></span>
+<span class="line"><span>│                                     │</span></span>
+<span class="line"><span>│  结果：B被误删！                     │</span></span>
+<span class="line"><span>└─────────────────────────────────────┘</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>解决方案：</span></span>
+<span class="line"><span>1. SATB (Snapshot At The Beginning)</span></span>
+<span class="line"><span>   - 记录开始时的引用关系</span></span>
+<span class="line"><span>   - 黑色的不能变白</span></span>
+<span class="line"><span>   </span></span>
+<span class="line"><span>2. 增量更新</span></span>
+<span class="line"><span>   - 记录黑色变灰的节点</span></span>
+<span class="line"><span>   - 重新扫描</span></span></code></pre></div><h3 id="追问7-zgc为什么能做到亚毫秒级停顿" tabindex="-1">追问7：ZGC为什么能做到亚毫秒级停顿？ <a class="header-anchor" href="#追问7-zgc为什么能做到亚毫秒级停顿" aria-label="Permalink to &quot;追问7：ZGC为什么能做到亚毫秒级停顿？&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>关键1：着色指针 (Colored Pointers)</span></span>
+<span class="line"><span>- 在指针上标记GC状态</span></span>
+<span class="line"><span>- 不需要扫描整个堆</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>关键2：并发重映射 (Concurrent Remapping)</span></span>
+<span class="line"><span>- 引用指针修复与引用遍历并行</span></span>
+<span class="line"><span>- 使用负载屏障 (Load Barrier)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>关键3：读屏障开销极小</span></span>
+<span class="line"><span>- 只有在读取引用时才触发</span></span>
+<span class="line"><span>- 写屏障无额外开销</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>关键4：Region分区</span></span>
+<span class="line"><span>- 与G1类似，但不固定分代</span></span>
+<span class="line"><span>- 可伸缩的Region大小</span></span></code></pre></div><h3 id="追问8-分代回收与内存分配的关系" tabindex="-1">追问8：分代回收与内存分配的关系 <a class="header-anchor" href="#追问8-分代回收与内存分配的关系" aria-label="Permalink to &quot;追问8：分代回收与内存分配的关系&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>对象分配流程：</span></span>
+<span class="line"><span>┌─────────────────────────────────────────┐</span></span>
+<span class="line"><span>│  1. TLAB分配                           │</span></span>
+<span class="line"><span>│     └── 有空间？ → 直接分配              │</span></span>
+<span class="line"><span>│              ↓                         │</span></span>
+<span class="line"><span>│  2. Eden区分配                         │</span></span>
+<span class="line"><span>│     └── 有空间？ → 分配，触发Minor GC   │</span></span>
+<span class="line"><span>│              ↓                         │</span></span>
+<span class="line"><span>│  3. 老年代分配                         │</span></span>
+<span class="line"><span>│     └── 有空间？ → 直接分配              │</span></span>
+<span class="line"><span>│              ↓                         │</span></span>
+<span class="line"><span>│  4. Full GC                            │</span></span>
+<span class="line"><span>│     └── 成功后重试1-3                  │</span></span>
+<span class="line"><span>│              ↓                         │</span></span>
+<span class="line"><span>│  5. OOM                                │</span></span>
+<span class="line"><span>└─────────────────────────────────────────┘</span></span></code></pre></div><h3 id="追问9-jvm参数如何设置最合理" tabindex="-1">追问9：JVM参数如何设置最合理？ <a class="header-anchor" href="#追问9-jvm参数如何设置最合理" aria-label="Permalink to &quot;追问9：JVM参数如何设置最合理？&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>通用配置（低延迟服务）：</span></span>
+<span class="line"><span>-Xms4g -Xmx4g                       # 固定堆，避免动态调整</span></span>
+<span class="line"><span>-XX:+UseZGC                          # ZGC</span></span>
+<span class="line"><span>-XX:+ClassUnloading                  # 类卸载</span></span>
+<span class="line"><span>-XX:SoftRefLRUPolicyMSPerMB=1000    # 软引用回收</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>通用配置（高吞吐）：</span></span>
+<span class="line"><span>-Xms4g -Xmx4g</span></span>
+<span class="line"><span>-XX:+UseParallelGC</span></span>
+<span class="line"><span>-XX:+UseParallelOldGC</span></span>
+<span class="line"><span>-XX:MaxGCPauseMillis=200             # 目标停顿时间</span></span>
+<span class="line"><span>-XX:GCTimeRatio=19                    # 吞吐量 = 1/(1+19) = 5%</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>G1配置（平衡）：</span></span>
+<span class="line"><span>-Xms4g -Xmx4g</span></span>
+<span class="line"><span>-XX:+UseG1GC</span></span>
+<span class="line"><span>-XX:MaxGCPauseMillis=200</span></span>
+<span class="line"><span>-XX:G1HeapRegionSize=8m              # Region大小</span></span>
+<span class="line"><span>-XX:InitiatingHeapOccupancyPercent=45</span></span></code></pre></div><h3 id="追问10-生产环境如何选择gc" tabindex="-1">追问10：生产环境如何选择GC？ <a class="header-anchor" href="#追问10-生产环境如何选择gc" aria-label="Permalink to &quot;追问10：生产环境如何选择GC？&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>选择依据：</span></span>
+<span class="line"><span>┌─────────────────────────────────────────────┐</span></span>
+<span class="line"><span>│  场景                    │ 推荐GC            │</span></span>
+<span class="line"><span>├─────────────────────────────────────────────┤</span></span>
+<span class="line"><span>│  堆 &lt; 8GB，低延迟        │ G1               │</span></span>
+<span class="line"><span>│  堆 &gt; 8GB，超低延迟      │ ZGC              │</span></span>
+<span class="line"><span>│  堆 &gt; 100GB              │ ZGC/Shenandoah   │</span></span>
+<span class="line"><span>│  吞吐量优先              │ Parallel GC      │</span></span>
+<span class="line"><span>│  小堆，单核              │ Serial GC        │</span></span>
+<span class="line"><span>└─────────────────────────────────────────────┘</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>云原生/容器环境：</span></span>
+<span class="line"><span>- G1 + Elastic Heap (JDK 14+)</span></span>
+<span class="line"><span>- ZGC 自动调整堆大小</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>日志分析：</span></span>
+<span class="line"><span>- -XX:+PrintGCDetails</span></span>
+<span class="line"><span>- -XX:+PrintGCTimeStamps</span></span>
+<span class="line"><span>- -Xlog:gc*:file=gc.log</span></span></code></pre></div><h2 id="实际调优案例" tabindex="-1">实际调优案例 <a class="header-anchor" href="#实际调优案例" aria-label="Permalink to &quot;实际调优案例&quot;">​</a></h2><h3 id="案例1-频繁full-gc" tabindex="-1">案例1：频繁Full GC <a class="header-anchor" href="#案例1-频繁full-gc" aria-label="Permalink to &quot;案例1：频繁Full GC&quot;">​</a></h3><div class="language-bash vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">bash</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 问题：CMS频繁触发Full GC</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 分析日志</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">java</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> -Xlog:gc</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">*</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">::file=gc.log</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> ...</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 发现：</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># - 对象晋升年龄太小</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># - 老年代碎片化严重</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 解决方案</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">-XX:MaxTenuringThreshold</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">=15</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">          # 提高晋升年龄</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">-XX:+UseCMSCompactAtFullCollection</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    # Full GC后整理</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">-XX:CMSFullGCsBeforeCompaction</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">=5</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">     # 5次后整理</span></span></code></pre></div><h3 id="案例2-g1停顿时间过长" tabindex="-1">案例2：G1停顿时间过长 <a class="header-anchor" href="#案例2-g1停顿时间过长" aria-label="Permalink to &quot;案例2：G1停顿时间过长&quot;">​</a></h3><div class="language-bash vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">bash</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 问题：停顿时间超过目标500ms</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 原因：</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># - Region太大</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># - 混合回收区太多</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 解决方案</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">-XX:G1HeapRegionSize</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">=4m</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">              # 减小Region</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">-XX:G1MixedGCLiveThresholdPercent</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">=85</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"> # 提高混合回收阈值</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">-XX:G1ReservePercent</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">=10</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">              # 保留空间</span></span></code></pre></div><h3 id="案例3-zgc内存泄漏" tabindex="-1">案例3：ZGC内存泄漏 <a class="header-anchor" href="#案例3-zgc内存泄漏" aria-label="Permalink to &quot;案例3：ZGC内存泄漏&quot;">​</a></h3><div class="language-bash vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">bash</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 问题：元空间持续增长</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;"># 解决方案</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">-XX:MetaspaceSize</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">=256m</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">               # 初始大小</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">-XX:MaxMetaspaceSize</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">=1g</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">              # 最大</span></span>
+<span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">-XX:+ClassUnloading</span><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">                   # 启用类卸载</span></span></code></pre></div><h2 id="面试加分总结" tabindex="-1">面试加分总结 <a class="header-anchor" href="#面试加分总结" aria-label="Permalink to &quot;面试加分总结&quot;">​</a></h2><blockquote><p>&quot;Java分代回收是JVM最核心的优化之一。从JDK 1.7的Serial/Parallel/CMS三足鼎立，到JDK 9+ G1成为默认，再到JDK 15+ ZGC正式可用，垃圾回收器在不断进化。</p><p>我理解分代回收的核心思想是：<strong>根据对象生命周期选择最合适的算法</strong>。年轻代用复制算法（对象存活率低），老年代用标记整理（避免碎片）。</p><p>实际工作中，我一般这样选型：</p><ul><li>中小堆（&lt;8GB）追求低延迟 → G1</li><li>大堆（&gt;8GB）超低延迟 → ZGC</li><li>吞吐量优先 → Parallel GC</li></ul><p>调优的第一步永远是先看日志，用数据说话，而不是凭感觉改参数。&quot;</p></blockquote><h2 id="相关知识点" tabindex="-1">相关知识点 <a class="header-anchor" href="#相关知识点" aria-label="Permalink to &quot;相关知识点&quot;">​</a></h2><ul><li><a href="./q4-jvm.html">Q4: JVM内存模型</a></li><li><a href="./q5-jvm-tuning.html">Q5: JVM调优与排查</a></li><li><a href="./q6-concurrent-hashmap.html">Q6: ConcurrentHashMap</a></li></ul>`,68)])])}const g=a(i,[["render",e]]);export{k as __pageData,g as default};
