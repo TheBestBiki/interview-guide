@@ -98,12 +98,57 @@ TPS = 每秒数据库事务数（针对数据库操作）
 场景1：前端多次请求
 ┌─────────────────────────────────────────────────┐
 │  前端: 页面加载 → 发起3个HTTP请求              │
-│    GET /api/userinfo                           │
-│    GET /api/products                           │
-│    POST /api/cart                              │
+│    GET /api/userinfo   (查)                   │
+│    GET /api/products    (查)                  │
+│    POST /api/cart      (写)                   │
 │                                                 │
 │  结果: QPS = 3, TPS可能是1-3                   │
 └─────────────────────────────────────────────────┘
+
+详细解释：
+```
+关键点：TPS是数据库事务数量，不是请求数量！
+
+QPS = 3 (3个HTTP请求)
+
+这3个请求的事务情况：
+
+1. GET /api/userinfo  → 无事务 (只读，autocommit)
+   → TPS + 0
+
+2. GET /api/products → 无事务 (只读，autocommit)  
+   → TPS + 0
+
+3. POST /api/cart    → 有事务 (插入操作)
+   → TPS + 1
+
+结果：QPS = 3, TPS = 1
+
+---
+
+另一种情况：3个请求都开启了事务
+
+1. GET /api/userinfo  → 有事务 (FOR UPDATE锁读)
+2. GET /api/products → 有事务 (FOR UPDATE锁读)
+3. POST /api/cart    → 有事务 (INSERT)
+
+结果：QPS = 3, TPS = 3
+
+---
+
+为什么查询请求通常没有事务？
+┌─────────────────────────────────────────────┐
+│  Spring Boot默认配置：                      │
+│  • autocommit = true                       │
+│  • 每个SQL单独提交                          │
+│  • 不占用数据库连接资源                     │
+│                                             │
+│  只有显式开启事务或写操作才占用事务：        │
+│  • @Transactional                          │
+│  • INSERT/UPDATE/DELETE                   │
+│  • SELECT ... FOR UPDATE                   │
+└─────────────────────────────────────────────┘
+```
 
 场景2：前端轮询
 ┌─────────────────────────────────────────────────┐
