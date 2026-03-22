@@ -18,21 +18,73 @@ import{_ as a,o as n,c as p,ae as l}from"./chunks/framework.CC-i3qbO.js";const k
 <span class="line"><span></span></span>
 <span class="line"><span>举例：</span></span>
 <span class="line"><span>- QPS=1000，每个请求1KB → 吞吐量 = 1MB/s</span></span>
-<span class="line"><span>- QPS=100，每个请求10MB → 吞吐量 = 1MB/s</span></span></code></pre></div><h3 id="常见混淆概念" tabindex="-1">常见混淆概念 <a class="header-anchor" href="#常见混淆概念" aria-label="Permalink to &quot;常见混淆概念&quot;">​</a></h3><table tabindex="0"><thead><tr><th>概念</th><th>全称</th><th>含义</th><th>面试重点</th></tr></thead><tbody><tr><td><strong>QPS</strong></td><td>Queries Per Second</td><td>每秒查询数</td><td>单机处理能力</td></tr><tr><td><strong>TPS</strong></td><td>Transactions Per Second</td><td>每秒事务数</td><td>业务完整性</td></tr><tr><td><strong>RPS</strong></td><td>Requests Per Second</td><td>每秒请求数</td><td>同QPS</td></tr><tr><td><strong>CPS</strong></td><td>Connections Per Second</td><td>每秒新建连接数</td><td>网络层面</td></tr><tr><td><strong>RT</strong></td><td>Response Time</td><td>响应时间</td><td>用户体验</td></tr><tr><td><strong>PV</strong></td><td>Page View</td><td>页面访问量</td><td>统计口径</td></tr><tr><td><strong>UV</strong></td><td>Unique Visitor</td><td>独立访客</td><td>统计口径</td></tr></tbody></table><h3 id="qps-vs-tps-关键区别" tabindex="-1">QPS vs TPS 关键区别 <a class="header-anchor" href="#qps-vs-tps-关键区别" aria-label="Permalink to &quot;QPS vs TPS 关键区别&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>TPS = 一次业务操作包含多个请求</span></span>
+<span class="line"><span>- QPS=100，每个请求10MB → 吞吐量 = 1MB/s</span></span></code></pre></div><h3 id="常见混淆概念" tabindex="-1">常见混淆概念 <a class="header-anchor" href="#常见混淆概念" aria-label="Permalink to &quot;常见混淆概念&quot;">​</a></h3><table tabindex="0"><thead><tr><th>概念</th><th>全称</th><th>含义</th><th>面试重点</th></tr></thead><tbody><tr><td><strong>QPS</strong></td><td>Queries Per Second</td><td>每秒查询数</td><td>单机处理能力</td></tr><tr><td><strong>TPS</strong></td><td>Transactions Per Second</td><td>每秒事务数</td><td>业务完整性</td></tr><tr><td><strong>RPS</strong></td><td>Requests Per Second</td><td>每秒请求数</td><td>同QPS</td></tr><tr><td><strong>CPS</strong></td><td>Connections Per Second</td><td>每秒新建连接数</td><td>网络层面</td></tr><tr><td><strong>RT</strong></td><td>Response Time</td><td>响应时间</td><td>用户体验</td></tr><tr><td><strong>PV</strong></td><td>Page View</td><td>页面访问量</td><td>统计口径</td></tr><tr><td><strong>UV</strong></td><td>Unique Visitor</td><td>独立访客</td><td>统计口径</td></tr></tbody></table><h3 id="qps-vs-tps-关键区别" tabindex="-1">QPS vs TPS 关键区别 <a class="header-anchor" href="#qps-vs-tps-关键区别" aria-label="Permalink to &quot;QPS vs TPS 关键区别&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>QPS = 每秒HTTP请求数（针对接口调用）</span></span>
+<span class="line"><span>TPS = 每秒数据库事务数（针对数据库操作）</span></span>
 <span class="line"><span></span></span>
-<span class="line"><span>举例：用户下单</span></span>
-<span class="line"><span>┌─────────────────────────────────────────┐</span></span>
-<span class="line"><span>│  TPS = 1 (一个事务)                     │</span></span>
-<span class="line"><span>│  QPS = 3 (三个请求)                     │</span></span>
-<span class="line"><span>│  ┌───────────┐                         │</span></span>
-<span class="line"><span>│  │ 请求1: 查询 │ → QPS+1               │</span></span>
-<span class="line"><span>│  │ 请求2: 校验 │ → QPS+1               │</span></span>
-<span class="line"><span>│  │ 请求3: 下单 │ → QPS+1               │</span></span>
-<span class="line"><span>│  └───────────┘                         │</span></span>
-<span class="line"><span>└─────────────────────────────────────────┘</span></span>
+<span class="line"><span>重要澄清：</span></span>
+<span class="line"><span>┌─────────────────────────────────────────────────────────────┐</span></span>
+<span class="line"><span>│  QPS是针对&quot;请求&quot;的，一个HTTP请求 = 1 QPS                  │</span></span>
+<span class="line"><span>│  TPS是针对&quot;事务&quot;的，一个数据库事务 = 1 TPS                │</span></span>
+<span class="line"><span>│                                                             │</span></span>
+<span class="line"><span>│  方法内部的多次查询不算QPS！                                │</span></span>
+<span class="line"><span>└─────────────────────────────────────────────────────────────┘</span></span></code></pre></div><h3 id="场景解析-你的理解是正确的" tabindex="-1">场景解析：你的理解是正确的！ <a class="header-anchor" href="#场景解析-你的理解是正确的" aria-label="Permalink to &quot;场景解析：你的理解是正确的！&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>以你描述的Spring Boot下单接口为例：</span></span>
 <span class="line"><span></span></span>
-<span class="line"><span>面试话术：</span></span>
-<span class="line"><span>&quot;TPS是业务维度的衡量，一个完整事务可能包含多个QPS。我们优化时主要关注QPS，但最终关心的是TPS代表的业务能力。&quot;</span></span></code></pre></div><h2 id="qps参考数值-你的服务器能抗多少" tabindex="-1">QPS参考数值：你的服务器能抗多少？ <a class="header-anchor" href="#qps参考数值-你的服务器能抗多少" aria-label="Permalink to &quot;QPS参考数值：你的服务器能抗多少？&quot;">​</a></h2><h3 id="不同配置的参考qps" tabindex="-1">不同配置的参考QPS <a class="header-anchor" href="#不同配置的参考qps" aria-label="Permalink to &quot;不同配置的参考QPS&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>┌────────────────────────────────────────────────────────────────────────┐</span></span>
+<span class="line"><span>┌─────────────────────────────────────────────────────────────┐</span></span>
+<span class="line"><span>│  HTTP请求: POST /order/create                              │</span></span>
+<span class="line"><span>│    ↓                                                      │</span></span>
+<span class="line"><span>│  QPS = 1 (一个请求)                                      │</span></span>
+<span class="line"><span>│    ↓                                                      │</span></span>
+<span class="line"><span>│  开启事务                                                 │</span></span>
+<span class="line"><span>│    ↓                                                      │</span></span>
+<span class="line"><span>│  查询库存 → 1次SQL                                        │</span></span>
+<span class="line"><span>│  校验用户  → 1次SQL                                        │</span></span>
+<span class="line"><span>│  创建订单  → 1次SQL                                        │</span></span>
+<span class="line"><span>│    ↓                                                      │</span></span>
+<span class="line"><span>│  提交事务                                                 │</span></span>
+<span class="line"><span>│    ↓                                                      │</span></span>
+<span class="line"><span>│  TPS = 1 (一个事务)                                      │</span></span>
+<span class="line"><span>└─────────────────────────────────────────────────────────────┘</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>结论：</span></span>
+<span class="line"><span>- 你接收一个下单请求 → QPS = 1</span></span>
+<span class="line"><span>- 你开启一个事务 → TPS = 1</span></span>
+<span class="line"><span>- 事务里的3次SQL查询 → 只是3次数据库操作，不算QPS！</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>之前的例子是我表述不清，特此更正。</span></span></code></pre></div><h3 id="什么情况下qps会大于1" tabindex="-1">什么情况下QPS会大于1？ <a class="header-anchor" href="#什么情况下qps会大于1" aria-label="Permalink to &quot;什么情况下QPS会大于1？&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>场景1：前端多次请求</span></span>
+<span class="line"><span>┌─────────────────────────────────────────────────┐</span></span>
+<span class="line"><span>│  前端: 页面加载 → 发起3个HTTP请求              │</span></span>
+<span class="line"><span>│    GET /api/userinfo                           │</span></span>
+<span class="line"><span>│    GET /api/products                           │</span></span>
+<span class="line"><span>│    POST /api/cart                              │</span></span>
+<span class="line"><span>│                                                 │</span></span>
+<span class="line"><span>│  结果: QPS = 3, TPS可能是1-3                   │</span></span>
+<span class="line"><span>└─────────────────────────────────────────────────┘</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>场景2：前端轮询</span></span>
+<span class="line"><span>┌─────────────────────────────────────────────────┐</span></span>
+<span class="line"><span>│  前端: 每5秒请求一次接口获取最新数据           │</span></span>
+<span class="line"><span>│    GET /api/notification (每5秒)              │</span></span>
+<span class="line"><span>│                                                 │</span></span>
+<span class="line"><span>│  结果: 1分钟内120次请求 → QPS = 2              │</span></span>
+<span class="line"><span>└─────────────────────────────────────────────────┘</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>场景3：微服务调用</span></span>
+<span class="line"><span>┌─────────────────────────────────────────────────┐</span></span>
+<span class="line"><span>│  用户服务 → 订单服务 → 库存服务               │</span></span>
+<span class="line"><span>│    1个请求 → 3个内部RPC调用                   │</span></span>
+<span class="line"><span>│                                                 │</span></span>
+<span class="line"><span>│  结果: 对用户来说 QPS=1                        │</span></span>
+<span class="line"><span>│       订单服务承受的QPS也=1                    │</span></span>
+<span class="line"><span>└─────────────────────────────────────────────────┘</span></span></code></pre></div><h3 id="面试加分话术" tabindex="-1">面试加分话术 <a class="header-anchor" href="#面试加分话术" aria-label="Permalink to &quot;面试加分话术&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>正确理解：</span></span>
+<span class="line"><span>&quot;我理解QPS是针对HTTP请求/响应的，一个接口调用算1个QPS。TPS是针对数据库事务的，一个事务算1个TPS。</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>比如我写的一个Spring Boot下单接口，用户调用一次POST /order/create，这是一个QPS。接口内部开启一个数据库事务执行查询、校验、下单，这是1个TPS。</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>所以QPS和TPS的关系取决于：</span></span>
+<span class="line"><span>- 如果是前后端分离，一个页面发多个请求 → QPS &gt; TPS</span></span>
+<span class="line"><span>- 如果是后端聚合调用 → QPS &lt; TPS</span></span>
+<span class="line"><span>- 如果是简单CRUD单表操作 → QPS ≈ TPS</span></span>
+<span class="line"><span>&quot;</span></span></code></pre></div><h2 id="qps参考数值-你的服务器能抗多少" tabindex="-1">QPS参考数值：你的服务器能抗多少？ <a class="header-anchor" href="#qps参考数值-你的服务器能抗多少" aria-label="Permalink to &quot;QPS参考数值：你的服务器能抗多少？&quot;">​</a></h2><h3 id="不同配置的参考qps" tabindex="-1">不同配置的参考QPS <a class="header-anchor" href="#不同配置的参考qps" aria-label="Permalink to &quot;不同配置的参考QPS&quot;">​</a></h3><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>┌────────────────────────────────────────────────────────────────────────┐</span></span>
 <span class="line"><span>│                        单机QPS参考值                                    │</span></span>
 <span class="line"><span>├────────────────────────────────────────────────────────────────────────┤</span></span>
 <span class="line"><span>│  配置             │  业务类型      │  预估QPS   │      说明          │</span></span>
@@ -324,4 +376,4 @@ import{_ as a,o as n,c as p,ae as l}from"./chunks/framework.CC-i3qbO.js";const k
 <span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        localCache.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">put</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(id, user);</span></span>
 <span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    }</span></span>
 <span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    return</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> user;</span></span>
-<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span></code></pre></div><h3 id="面试加分总结" tabindex="-1">面试加分总结 <a class="header-anchor" href="#面试加分总结" aria-label="Permalink to &quot;面试加分总结&quot;">​</a></h3><blockquote><p>&quot;我在工作中会这样评估系统QPS：</p><p>首先，明确业务类型——查多写少还是写多查少，这决定了优化方向。然后，根据服务器配置给出一个预估：4核8G常规业务大概能抗1500-2000QPS。最后，我会预留30%的余量，因为线上流量往往比预估高30%-50%。</p><p>当单机达到瓶颈时，我的处理顺序是：先优化代码和缓存，其次考虑垂直升级，最后才是水平扩展。盲目加机器是最省事但也是最贵的方案。&quot;</p></blockquote><h2 id="相关知识点" tabindex="-1">相关知识点 <a class="header-anchor" href="#相关知识点" aria-label="Permalink to &quot;相关知识点&quot;">​</a></h2><ul><li><a href="./q5-jvm-tuning.html">Q5: JVM调优与排查</a> - 配合GC优化提升QPS</li><li><a href="/interview-guide/03-database/q10-redis.html">Q16: Redis数据结构与分布式锁</a> - 缓存提升QPS</li><li><a href="/interview-guide/03-database/q11-mysql-optimization.html">Q17: MySQL索引优化与分库分表</a> - 数据库优化提升QPS</li></ul>`,52)])])}const g=a(i,[["render",e]]);export{k as __pageData,g as default};
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span></code></pre></div><h3 id="面试加分总结" tabindex="-1">面试加分总结 <a class="header-anchor" href="#面试加分总结" aria-label="Permalink to &quot;面试加分总结&quot;">​</a></h3><blockquote><p>&quot;我在工作中会这样评估系统QPS：</p><p>首先，明确业务类型——查多写少还是写多查少，这决定了优化方向。然后，根据服务器配置给出一个预估：4核8G常规业务大概能抗1500-2000QPS。最后，我会预留30%的余量，因为线上流量往往比预估高30%-50%。</p><p>当单机达到瓶颈时，我的处理顺序是：先优化代码和缓存，其次考虑垂直升级，最后才是水平扩展。盲目加机器是最省事但也是最贵的方案。&quot;</p></blockquote><h2 id="相关知识点" tabindex="-1">相关知识点 <a class="header-anchor" href="#相关知识点" aria-label="Permalink to &quot;相关知识点&quot;">​</a></h2><ul><li><a href="./q5-jvm-tuning.html">Q5: JVM调优与排查</a> - 配合GC优化提升QPS</li><li><a href="/interview-guide/03-database/q10-redis.html">Q16: Redis数据结构与分布式锁</a> - 缓存提升QPS</li><li><a href="/interview-guide/03-database/q11-mysql-optimization.html">Q17: MySQL索引优化与分库分表</a> - 数据库优化提升QPS</li></ul>`,58)])])}const u=a(i,[["render",e]]);export{k as __pageData,u as default};
