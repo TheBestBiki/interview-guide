@@ -40,6 +40,7 @@ export default defineConfig({
       {
         text: '数据库与缓存',
         items: [
+          { text: 'Q12: MySQL核心原理深度剖析', link: '/03-database/q12-mysql-core' },
           { text: 'Q16: Redis数据结构与分布式锁', link: '/03-database/q10-redis' },
           { text: 'Q17: MySQL索引优化与分库分表', link: '/03-database/q11-mysql-optimization' },
           { text: 'Q18: 消息队列', link: '/03-database/q12-mq' },
