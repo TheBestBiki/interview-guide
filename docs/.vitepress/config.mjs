@@ -24,6 +24,7 @@ export default defineConfig({
           { text: 'Q7: Java分代回收深度剖析', link: '/01-java/q7-generational-gc' },
           { text: 'Q8: JVM内存模型深度剖析', link: '/01-java/q8-jvm-memory-model' },
           { text: 'Q9: 吞吐量与QPS深度剖析', link: '/01-java/q9-throughput-qps' },
+          { text: 'Q10: MyBatis原理', link: '/01-java/q10-mybatis' },
         ]
       },
       {
