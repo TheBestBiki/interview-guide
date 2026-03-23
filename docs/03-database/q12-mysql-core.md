@@ -54,36 +54,58 @@ SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;
 
 ### 2.2 经典面试题：RR下的"幻读"
 
+这是面试最高频的问题之一，详细拆解如下：
+
 ```sql
--- 场景：RR级别
-T1: BEGIN;
-T2: SELECT * FROM t WHERE id=1;  -- value=10
-T3: 另一个事务 UPDATE t SET value=20 WHERE id=1; COMMIT;
-T4: UPDATE t SET value=value+1 WHERE id=1;  -- 更新成功，value=21
-T5: SELECT * FROM id=1;  -- 看到 value=21
+-- 场景：RR级别，表中有一行数据 id=1, value=10
+
+T1: BEGIN;                    -- 开启事务A
+T2: SELECT * FROM t WHERE id=1;   -- 查询得到 value=10（生成ReadView）
+T3:                               -- 事务B开启
+    UPDATE t SET value=20 WHERE id=1; 
+    COMMIT;                     -- 事务B提交，数据变为20
+T4: UPDATE t SET value=value+1 WHERE id=1;  -- 关键：更新成功，value变为21
+T5: SELECT * FROM id=1;        -- 惊人发现：看到 value=21
 ```
 
-**追问：这是幻读吗？**
+**为什么会"看见"？**
 
-不是幻读，而是"快照穿透"：
-- 幻读：指查到新插入的行（Insert）
-- 这种情况：是对已有行的修改（Update），属于"不可重复读"的变体
+这里涉及两个核心机制的碰撞：**快照读 (Snapshot Read)** 和 **当前读 (Current Read)**
 
-**追问：如何避免？**
+| 时间点 | 操作类型 | 发生了什么 |
+|--------|----------|------------|
+| T2 | 快照读 | InnoDB创建ReadView，记住此刻数据状态 |
+| T4 | 当前读 | UPDATE必须获取最新数据（在20基础上+1变成21） |
+| T5 | 快照读 | 因为事务A修改了该行，DB_TRX_ID变成自己的ID，可见 |
 
-**方案A：悲观锁**
+### 2.3 这是幻读吗？
+
+**严格来说：不是幻读，而是"快照穿透"**
+
+| 类型 | 定义 |
+|------|------|
+| 幻读 (Phantom Read) | 同一事务中，第二次查询查到第一次没见过的**新插入的行**（Insert） |
+| 这种情况 | 是对**已有行**的修改（Update），属于"不可重复读"的变体 |
+
+### 2.4 如何避免这种"惊喜"？
+
+**方案A：悲观锁（先查再改）**
 ```sql
+-- 第一次查询就用 FOR UPDATE
 SELECT * FROM t WHERE id=1 FOR UPDATE;
 ```
 - 触发当前读，加排他锁
-- 其他事务的UPDATE会被阻塞
+- 事务B在T3时会被阻塞，直到事务A提交
+- 保证两次SELECT结果绝对一致
 
-**方案B：乐观锁**
+**方案B：乐观锁（CAS机制）**
 ```sql
+-- 利用version字段
 UPDATE t SET value=21, version=version+1 
 WHERE id=1 AND version=old_version;
 ```
-- 影响行数为0时触发重试
+- 如果事务B已修改，返回影响行数=0
+- Java代码触发重试逻辑
 
 ---
 
@@ -184,39 +206,87 @@ WHERE a=1 AND b>10 AND c=3
 
 ## 六、MVCC原理
 
-### 6.1 三大核心组件
+> 这是MySQL最核心的并发控制机制，面试必问
 
-**① 隐式字段**
-- `DB_TRX_ID`：最后修改的事务ID
-- `DB_ROLL_PTR`：回滚指针，指向undo log
+### 6.1 为什么要用MVCC？
 
-**② Undo Log**
-- 更新时，旧数据写入undo log
-- 通过回滚指针串联成版本链
+让数据库实现**"读不加锁，读写不冲突"**
+
+如果没有MVCC，大查询（报表统计）会把所有写入操作锁住，系统会卡死。MVCC让查询像在平行时空一样，读到数据在某个历史时刻的状态。
+
+### 6.2 三大核心组件
+
+**① 隐式字段（Hidden Columns）**
+
+InnoDB在每一行数据后面增加隐藏列：
+
+| 字段 | 作用 |
+|------|------|
+| `DB_TRX_ID` | 最后一次插入或更新该行的事务ID |
+| `DB_ROLL_PTR` | 回滚指针，指向该行上一个版本的undo log地址 |
+
+**② Undo Log（回滚日志）**
+
+- 更新一行数据时，InnoDB不会直接覆盖旧数据
+- 把旧数据写入undo log
+- 通过`DB_ROLL_PTR`指针串联成**版本链**
 
 **③ ReadView（一致性视图）**
-- 记录当前活跃事务ID列表
-- 决定可见哪个版本
 
-### 6.2 可见性判断
+当事务执行查询时，生成ReadView，记录：
+- 哪些事务还在运行（未提交）
+- 当前最大的事务ID是多少
+
+### 6.3 查询时如何判断"我能看哪个版本"？
+
+```java
+// InnoDB 快照读核心逻辑
+for (每个版本) {
+    if (版本的TRX_ID == 自己) {
+        return 可见;  // 自己修改的当然可见
+    }
+    if (版本的TRX_ID < 活跃事务最小ID) {
+        return 可见;  // 已提交
+    }
+    if (版本的TRX_ID > 当前最大事务ID) {
+        continue;  // ReadView之后开启的，看不见
+    }
+    if (版本的TRX_ID 在活跃事务列表中) {
+        continue;  // 未提交，看不见，找上一个版本
+    }
+    return 可见;
+}
+```
+
+**简化理解：**
 
 | 版本TRX_ID | 判断结果 |
 |------------|----------|
 | 是自己 | 可见 |
-| 已提交 | 可见 |
+| 已提交（在ReadView生成前） | 可见 |
 | 未提交（活跃） | 不可见，找上一个版本 |
-| ReadView之后开启 | 不可见 |
+| ReadView之后才开启 | 不可见 |
 
-### 6.3 RC vs RR 的区别
+### 6.4 RC vs RR：ReadView生成时机不同
 
-| 隔离级别 | ReadView生成时机 |
-|----------|------------------|
-| RC | 每次SELECT都生成新ReadView |
-| RR | 事务第一次SELECT时生成，整个事务复用 |
+| 隔离级别 | ReadView生成时机 | 效果 |
+|----------|------------------|------|
+| **RC** | 每次SELECT都生成新ReadView | 别人提交后，下一次查询就能看到 |
+| **RR** | 事务第一次SELECT时生成 | 整个事务复用ReadView，别人的提交永远不可见 |
 
 **追问：RR下为什么可重复读？**
 
-因为ReadView在整个事务期间不变，别人的提交不可见。
+因为ReadView在整个事务期间不变。无论别人怎么提交，只要没在你之前开启，你都看不见。
+
+### 6.5 案例说明
+
+```sql
+-- RR级别
+T1: BEGIN;
+T2: SELECT * FROM t WHERE id=1;  -- ReadView生成，看到 value=10
+T3: UPDATE t SET value=20 WHERE id=1;  -- 修改，数据变为20
+T4: SELECT * FROM id=1;  -- 仍然看到 value=10（ReadView没变）
+```
 
 ---
 
@@ -234,7 +304,7 @@ SELECT * FROM t WHERE id = 1 FOR UPDATE;
 ```sql
 SELECT * FROM t WHERE status = 'PENDING' FOR UPDATE;
 ```
-- 锁住所有符合条件的行
+- 锁住所有符合条件的行（10条就锁10条）
 
 ### 7.2 索引失效 = 锁全表
 
@@ -255,9 +325,10 @@ SELECT * FROM t WHERE status = 'PENDING' FOR UPDATE;
 ```sql
 SELECT * FROM t WHERE id > 5 FOR UPDATE;
 ```
-- 锁住id=10
-- 锁住间隙(5, 10)和(10, +∞)
+- 锁住id=10（记录锁）
+- 锁住间隙(5, 10)和(10, +∞)（间隙锁）
 - 另一个事务`INSERT INTO t VALUES(8)`会被阻塞
+- 这就是InnoDB防止"幻读"的机制
 
 ### 7.4 NOWAIT 语法（MySQL 8.0+）
 
@@ -265,7 +336,7 @@ SELECT * FROM t WHERE id > 5 FOR UPDATE;
 SELECT * FROM t WHERE id=1 FOR UPDATE NOWAIT;
 ```
 - 如果行被锁，立即报错返回
-- 避免长时间阻塞
+- 避免长时间阻塞，提升用户体验
 
 ---
 
@@ -282,9 +353,10 @@ SELECT * FROM t WHERE id=1 FOR UPDATE NOWAIT;
 9. **如何避免回表？** → 索引覆盖（Covering Index）
 10. **联合索引最左匹配原则？** → 从最左开始，依次匹配
 11. **范围查询后右边的字段还能用索引吗？** → 不能
-12. **MVCC哪三个组件？** → 隐式字段+Undo Log+ReadView
-13. **RC和RR的ReadView区别？** → RC每次生成，RR只用一次
-14. **FOR UPDATE锁多行？** → 符合条件的所有行
-15. **没有索引的FOR UPDATE会怎样？** → 锁全表+间隙锁
-16. **Next-Key Lock由什么组成？** → 记录锁+间隙锁
-17. **FOR UPDATE NOWAIT有什么用？** → 避免阻塞，立即返回
+12. **MVCC哪三个组件？** → 隐式字段(DB_TRX_ID/ROLL_PTR)+Undo Log+ReadView
+13. **MVCC如何判断版本可见性？** → 根据TRX_ID与活跃事务列表比对
+14. **RC和RR的ReadView区别？** → RC每次生成，RR只用一次
+15. **FOR UPDATE锁多行？** → 符合条件的所有行
+16. **没有索引的FOR UPDATE会怎样？** → 锁全表+间隙锁
+17. **Next-Key Lock由什么组成？** → 记录锁+间隙锁
+18. **FOR UPDATE NOWAIT有什么用？** → 避免阻塞，立即返回
