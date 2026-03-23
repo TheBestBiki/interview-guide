@@ -26,6 +26,7 @@ export default defineConfig({
           { text: 'Q9: 吞吐量与QPS深度剖析', link: '/01-java/q9-throughput-qps' },
           { text: 'Q10: MyBatis原理', link: '/01-java/q10-mybatis' },
           { text: 'Q11: Elasticsearch核心原理', link: '/01-java/q11-elasticsearch' },
+          { text: 'Q13: Spring事务@Transactional深度剖析', link: '/01-java/q13-spring-transaction' },
         ]
       },
       {
